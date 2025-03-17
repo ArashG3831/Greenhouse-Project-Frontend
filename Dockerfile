@@ -1,16 +1,9 @@
-FROM node:21-alpine
+FROM node:22.14.0
 
 WORKDIR /app
 
-COPY package*.json .
-COPY *config.js .
+COPY . . 
 
 RUN npm install
 
-COPY . .
 
-EXPOSE 5173
-
-ENV HOST=0.0.0.0
-
-CMD [ "npm", "run", "dev", "--", "--host", "0.0.0.0"]
