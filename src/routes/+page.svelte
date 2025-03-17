@@ -3,54 +3,102 @@
     import Chart from "chart.js/auto";
     import 'bootstrap/dist/css/bootstrap.min.css';
 
+    // ----- THEME TOGGLING SETUP -----
+    let theme = "light";  // default theme set to Light Mode
+
+    function setCookie(name, value, days) {
+        const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
+        document.cookie = name + "=" + encodeURIComponent(value) + "; expires=" + expires + "; path=/";
+    }
+    function getCookie(name) {
+        const value = "; " + document.cookie;
+        const parts = value.split("; " + name + "=");
+        if (parts.length === 2) return decodeURIComponent(parts.pop().split(";").shift());
+    }
+
+    function toggleTheme() {
+        theme = theme === "dark" ? "light" : "dark";
+        setCookie("theme", theme, 365);
+        updateChartThemes();
+    }
+
+    function getTextColor() {
+        return theme === 'dark' ? '#ffffff' : '#003d2e';
+    }
+    function getGridColor() {
+        return theme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)';
+    }
+
+    function updateChartThemes() {
+        [tempChart, humidityChart, oxygenChart, co2Chart, lightChart].forEach(chart => {
+            if (chart) {
+                if (chart.options.scales.x) {
+                    chart.options.scales.x.ticks.color = getTextColor();
+                    chart.options.scales.x.grid.color = getGridColor();
+                }
+                if (chart.options.scales.y) {
+                    chart.options.scales.y.ticks.color = getTextColor();
+                    chart.options.scales.y.grid.color = getGridColor();
+                }
+                if (chart.options.plugins?.legend?.labels) {
+                    chart.options.plugins.legend.labels.color = getTextColor();
+                }
+                chart.update();
+            }
+        });
+    }
+    // ----- END THEME SETUP -----
+
     let sensorData = [];
     let predictionData = [];
     let selectedRange = "7d";
     let tempChart, humidityChart, oxygenChart, co2Chart, lightChart;
-    let isMobile = false; // Default value
+    let isMobile = false;
 
-    // 🔥 Live sensor values (always the latest!)
+    // Live sensor values
     let latestTemperature = "Loading...";
     let latestHumidity = "Loading...";
     let latestOxygen = "Loading...";
     let latestLight = "Loading...";
-    let fanMode = null;   // Options: "auto", "on", "off"
-    let waterMode = null; // Options: "auto", "on", "off"
 
-    let lastUpdated = "Loading..."; // ✅ Track last updated time
+    // Fan & water modes
+    let fanMode = null;   // "auto", "on", or "off"
+    let waterMode = null; // "auto", "on", or "off"
 
+    // Track "Last Updated" and loading state
+    let lastUpdated = "Loading...";
     let isLoading = true;
+    let lastValidTimestamp = null;
+    let lastUpdatedElement;
 
-    let lastValidTimestamp = null;  // ✅ Stores last REAL sensor timestamp
-    let lastUpdatedElement;  // 🔥 Store reference to the "Last Updated" element
+    // Track "Dispensing" for the +10ml button
+    let dispensing = false;  // true for 1 second after pressing +10ml
 
-    let ip = "http://192.168.1.116:8000"
+    let ip = "http://5.201.140.68:8091";
+
     async function fetchData() {
         try {
             isLoading = true;
-            console.log("📡 Fetching Data on Load...");
+            console.log("📡 Fetching Data...");
 
-            const sensorResponse = await fetch(ip + `/api/get_data?range=${selectedRange}`);
+            const sensorResponse = await fetch(`${ip}/api/get_data?range=${selectedRange}`);
             sensorData = await sensorResponse.json();
-            console.log("🌐 API Response:", sensorData);
 
             const predictionResponse = await fetch(ip + "/api/get_predictions");
             predictionData = await predictionResponse.json();
             predictionData = predictionData.reverse();
-            console.log("🔮 Prediction Data:", predictionData);
 
             if (!sensorData || sensorData.length === 0) {
                 console.error("❌ API returned empty or invalid data");
                 return;
             }
 
-            // Update control states and live sensor values
-            updateWaterMode();
-            updateFanMode();
+            // Do NOT call updateWaterMode() or updateFanMode() here so that
+            // the toggle buttons don’t flicker on each fetch.
             updateLiveSensorValues();
 
-            // Use the last sensor reading to update the "Last Updated" display
-            let latestData = sensorData[sensorData.length - 1]; // Last real sensor data point
+            // Update "Last Updated"
+            let latestData = sensorData[sensorData.length - 1];
             let newTimestamp = new Date(latestData.timestamp).toISOString();
             if (newTimestamp !== lastValidTimestamp) {
                 lastValidTimestamp = newTimestamp;
@@ -58,7 +106,7 @@
 
                 if (lastUpdatedElement) {
                     lastUpdatedElement.classList.remove("updated");
-                    void lastUpdatedElement.offsetWidth; // Force reflow to restart animation
+                    void lastUpdatedElement.offsetWidth; // force reflow
                     lastUpdatedElement.classList.add("updated");
                 }
             }
@@ -66,12 +114,12 @@
             formatTimestamps();
             filterDataForChart();
 
-            // 🔥 Force chart update after data is fetched
             if (tempChart) {
                 updateCharts();
             } else {
-                console.warn("⚠️ Charts not initialized yet. Retrying in 500ms...");
-                setTimeout(() => updateCharts(), 500);
+                // Initialize charts once if they haven't been created yet.
+                initializeCharts();
+                updateCharts();
             }
         } catch (error) {
             console.error("❌ Error fetching data:", error);
@@ -80,38 +128,28 @@
         }
     }
 
-
-
-
     function updateLiveSensorValues() {
         if (!sensorData || sensorData.length === 0) {
-            console.warn("⚠️ No sensor data available for Live Sensors");
+            console.warn("⚠️ No sensor data for Live Sensors");
             return;
         }
-
-        let latestData = sensorData[sensorData.length - 1]; // Last data point
-
-        console.log("📡 Updating Live Sensor Values:", latestData);
-
-        latestTemperature = latestData?.temperature !== undefined ? latestData.temperature.toFixed(2) + "°C" : "N/A";
-        latestHumidity = latestData?.humidity !== undefined ? latestData.humidity.toFixed(2) + "%" : "N/A";
-        latestOxygen = latestData?.oxygen_level !== undefined ? latestData.oxygen_level.toFixed(2) + "%" : "N/A";
-        latestLight = latestData?.light_illumination !== undefined ? latestData.light_illumination.toFixed(2) + " lx" : "N/A";
+        let latestData = sensorData[sensorData.length - 1];
+        latestTemperature = latestData?.temperature?.toFixed(2) + "°C" || "N/A";
+        latestHumidity = latestData?.humidity?.toFixed(2) + "%" || "N/A";
+        latestOxygen = latestData?.oxygen_level?.toFixed(2) + "%" || "N/A";
+        latestLight = latestData?.light_illumination?.toFixed(2) + " lx" || "N/A";
     }
-
 
     async function updateFanMode(mode) {
         try {
-            fanMode = mode; // ✅ Instantly update UI before the request
+            fanMode = mode;
             const response = await fetch(ip + "/api/set_control_state/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ fan_mode: mode })
             });
-
             const data = await response.json();
-            console.log("✅ Fan control updated:", data);
-            fanMode = data.fan_mode; // ✅ Ensure it's set to the response value
+            fanMode = data.fan_mode;
         } catch (error) {
             console.error("❌ Error updating fan control:", error);
         }
@@ -119,45 +157,56 @@
 
     async function updateWaterMode(mode) {
         try {
-            waterMode = mode; // ✅ Instantly update UI before the request
+            waterMode = mode;
             const response = await fetch(ip + "/api/set_control_state/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ water_mode: mode })
             });
-
             const data = await response.json();
-            console.log("✅ Water control updated:", data);
-            waterMode = data.water_mode; // ✅ Ensure it's set to the response value
+            waterMode = data.water_mode;
         } catch (error) {
             console.error("❌ Error updating water control:", error);
         }
     }
 
-
+    async function handleWaterDispense() {
+        // Indicate success style for 1 second without affecting waterMode.
+        dispensing = true;
+        try {
+            await fetch(ip + "/api/set_control_state/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ water_dispense: "+10ml" })
+            });
+        } catch (err) {
+            console.error("❌ Error dispensing water:", err);
+        } finally {
+            setTimeout(() => {
+                dispensing = false;
+            }, 1000);
+        }
+    }
 
     function filterDataForChart() {
         let step = 1;
-
         if (selectedRange === "1h") {
-            step = isMobile ? 1 : 1;
+            step = 1;
         } else if (selectedRange === "7d") {
-            step = isMobile ? 6 : 6;
+            step = 6;
         } else if (selectedRange === "24h") {
-            step = isMobile ? 6 : 6;
+            step = 6;
         } else if (selectedRange === "30d") {
-            step = isMobile ? 1 : 1;
+            step = 1;
         } else if (selectedRange === "all") {
             step = isMobile ? 6 : 1;
         }
-
         sensorData = sensorData.filter((_, index) => index % step === 0);
     }
 
     function formatTimestamps() {
-        sensorData.forEach((d) => {
+        sensorData.forEach(d => {
             let dateObj = new Date(d.timestamp);
-
             if (selectedRange === "1h" || selectedRange === "24h") {
                 d.formattedTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             } else if (selectedRange === "7d") {
@@ -169,7 +218,6 @@
                 d.formattedTime = `Week ${weekNumber}`;
             }
         });
-
         if (selectedRange === "all") {
             sensorData.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         }
@@ -182,26 +230,19 @@
     }
 
     function updateCharts() {
-        if (!tempChart || !humidityChart || !oxygenChart || !co2Chart || !lightChart) {
-            console.warn("⚠️ Some charts are missing, reinitializing...");
-            initializeCharts();
-        }
-
         if (sensorData.length === 0) {
-            console.warn("⚠️ No sensor data available for charts.");
+            console.warn("⚠️ No sensor data for charts.");
             return;
         }
-
-        console.log("📊 Updating Charts...");
         const labels = sensorData.map(d => d.formattedTime);
         let predLabels = [];
         let scaledPredData = [];
 
         if (selectedRange === "7d") {
-            predLabels = predictionData.slice(0, 24).map((_, i) => `+${(i + 1)}h`);
+            predLabels = predictionData.slice(0, 24).map((_, i) => `+${i + 1}h`);
             scaledPredData = predictionData.slice(0, 24);
         } else if (selectedRange === "24h") {
-            predLabels = predictionData.slice(0, 3).map((_, i) => `+${(i + 1)}h`);
+            predLabels = predictionData.slice(0, 3).map((_, i) => `+${i + 1}h`);
             scaledPredData = predictionData.slice(0, 3);
         }
 
@@ -214,12 +255,10 @@
 
     function updateChart(chart, labels, predLabels, data, predData) {
         let lastRealIndex = data.length;
-
         let emptyData = new Array(lastRealIndex).fill(null);
         chart.data.labels = [...labels, ...predLabels];
         chart.data.datasets[0].data = data;
         chart.data.datasets[1].data = [...emptyData, ...predData];
-
         chart.update();
     }
 
@@ -229,21 +268,49 @@
             data: {
                 labels: [],
                 datasets: [
-                    { label: label, borderColor: color, data: [], fill: false, pointRadius: 0, borderWidth: 2 },
-                    { label: "Predicted " + label, borderColor: color, data: [], fill: false, borderWidth: 2, borderDash: [5, 5], pointRadius: 0 }
+                    {
+                        label,
+                        borderColor: color,
+                        data: [],
+                        fill: false,
+                        pointRadius: 0,
+                        borderWidth: 2
+                    },
+                    {
+                        label: "Predicted " + label,
+                        borderColor: color,
+                        data: [],
+                        fill: false,
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointRadius: 0
+                    }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: { y: { beginAtZero: false } }
+                scales: {
+                    x: {
+                        ticks: { color: getTextColor() },
+                        grid: { color: getGridColor() }
+                    },
+                    y: {
+                        beginAtZero: false,
+                        ticks: { color: getTextColor() },
+                        grid: { color: getGridColor() }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: { color: getTextColor() }
+                    }
+                }
             }
         });
     }
 
     function initializeCharts() {
-        console.log("📊 Initializing Charts..."); // Debugging log
-
         const ctxTemp = document.getElementById("temperatureChart")?.getContext("2d");
         const ctxHumidity = document.getElementById("humidityChart")?.getContext("2d");
         const ctxOxygen = document.getElementById("oxygenChart")?.getContext("2d");
@@ -254,386 +321,567 @@
             console.error("❌ Some chart canvases were not found in the DOM.");
             return;
         }
-
-        // ✅ Assign charts globally
         tempChart = createChart(ctxTemp, "Temperature (°C)", "red");
         humidityChart = createChart(ctxHumidity, "Humidity (%)", "blue");
         oxygenChart = createChart(ctxOxygen, "Oxygen Level (%)", "green");
         co2Chart = createChart(ctxCO2, "CO2 Level (ppm)", "purple");
         lightChart = createChart(ctxLight, "Light (lx)", "orange");
-
-        console.log("✅ Charts Initialized:", { tempChart, humidityChart, oxygenChart, co2Chart, lightChart });
     }
 
+    import { createEventDispatcher } from 'svelte';
 
-    function handleWaterDispense() {
-        updateWaterMode('+10ml'); // ✅ Call the existing function
-        console.log("Water Dispensed!"); // ✅ Debugging log
+    const dispatch = createEventDispatcher();
 
-        setTimeout(() => document.activeElement.blur(), 500); // ✅ Force blur on mobile & desktop
+    export let options = [
+        { value: "1h", label: "Last Hour" },
+        { value: "24h", label: "Last 24 Hours" },
+        { value: "7d", label: "Last 7 Days" },
+        { value: "30d", label: "Last 30 Days" },
+        { value: "all", label: "All Data" }
+    ];
+
+    let isOpen = false;
+
+    function toggleDropdown() {
+        isOpen = !isOpen;
     }
 
-
+    function selectOption(opt) {
+        selectedRange = opt.value;
+        dispatch('change', opt.value); // So parent can respond
+        isOpen = false;
+    }
 
     onMount(() => {
-
-        console.log("🚀 App Mounted! Fetching Data...");
+        // Check for saved theme
+        const savedTheme = getCookie("theme");
+        if (savedTheme) {
+            theme = savedTheme;
+        }
         isMobile = window.innerWidth < 768;
-
-        fetchData(); // Fetch data first
-
-        setTimeout(() => {
-            console.log("📊 Delaying Chart Initialization...");
-            initializeCharts(); // Wait before initializing charts
-            updateCharts(); // Ensure charts update with fresh data
-        }, 500); // Add slight delay to ensure charts have valid data
+        // Initialize toggles (if needed)
+        updateWaterMode();
+        updateFanMode();
+        // Initialize charts once on mount
+        initializeCharts();
+        // Fetch data immediately and then every 5 seconds.
+        fetchData();
+        setInterval(() => {
+            fetchData();
+        }, 5000);
     });
-
-
-
 </script>
 
 
+<!-- Outer wrapper toggles between dark/light -->
+<div class={theme}>
+    <!-- HEADER -->
+    <div class="container-fluid header text-center p-5 mb-md-5 mb-3">
+        <div class="fw-bold">Greenhouse Dashboard</div>
+        <div class="mt-2 header-subtitle">
+            <i>Real-time Environmental Monitoring</i>
+        </div>
 
+        <!-- Desktop Theme Toggle -->
+        <button style="font-size: 16px"
+                on:click={toggleTheme}
+                class="theme-toggle d-none d-md-block">
+            {#if theme === 'dark'}
+                ☀️ Switch to Light Mode
+            {:else}
+                🌙 Switch to Dark Mode
+            {/if}
+        </button>
 
+        <!-- Mobile Theme Toggle -->
+        <button style="font-size: 16px"
+                on:click={toggleTheme}
+                class="theme-toggle-mobile d-block d-md-none mx-auto my-3">
+            {#if theme === 'dark'}
+                🌞 Switch to Light Mode
+            {:else}
+                🌙 Switch to Dark Mode
+            {/if}
+        </button>
+    </div>
 
+    <div class="container main-content">
+        <div class="d-flex align-items-center header-info">
+            <p bind:this={lastUpdatedElement} class="last-updated m-0 me-3">
+                Last Updated: {lastUpdated}
+            </p>
+            {#if isLoading}
+                <div class="spinner-border" role="status" style="width: 27px; height: 27px;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            {/if}
+        </div>
 
+        <div class="mt-md-4 mt-2">
+            <div class="row gx-4 gy-4 flex-column flex-md-row">
+                <!-- Live Data -->
+                <div class="col-md-7 d-grid gap-3">
+                    <h2 class="section-title">Live Data</h2>
+                    <div class="row row-cols-2 gx-3 gy-3">
+                        <div class="col">
+                            <div class="sensor-card text-center">
+                                <h3>Temperature</h3>
+                                <p class="fs-4 text-danger">{latestTemperature}</p>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="sensor-card text-center">
+                                <h3>Humidity</h3>
+                                <p class="fs-4 text-primary">{latestHumidity}</p>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="sensor-card text-center">
+                                <h3>Oxygen Level</h3>
+                                <p class="fs-4 text-success">{latestOxygen}</p>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="sensor-card text-center">
+                                <h3>Light Intensity</h3>
+                                <p class="fs-4 text-warning">{latestLight}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-<div class="container-fluid text-center font-bold p-5 mb-md-5 mb-3" style="color: white; background-color: #0a3622; font-size: 48px">
-    Greenhouse Dashboard
+                <!-- Controls -->
+                <div class="col-md-5 d-flex flex-column gap-3">
+                    <h2 class="section-title">Controls</h2>
+
+                    <!-- Fan Control -->
+                    <div class="sensor-card text-center h-100">
+                        <h3>Fan Control</h3>
+                        <div class="btn-group mt-2">
+                            <button class="p-0 align-items-center d-flex btn btn-outline-success {fanMode === 'auto' ? 'active' : ''}"
+                                    on:click={() => updateFanMode('auto')}
+                                    style="width: 84px; height: 38px">
+                                {#if fanMode === 'auto' || theme === "dark"}
+                                    <img class="mx-1" src="/smart.png" alt="smart icon" style="border-radius:16px" width="28" height="28"/>
+                                {:else}
+                                    <img class="mx-1" src="/smart2.png" alt="smart icon" style="border-radius:16px" width="28" height="28"/>
+                                {/if}
+                                Auto
+                            </button>
+
+                            <button class="btn btn-outline-primary {fanMode === 'on' ? 'active' : ''}"
+                                    on:click={() => updateFanMode('on')}
+                                    style="width: 84px; height: 38px">
+                                On
+                            </button>
+
+                            <button class="btn btn-outline-danger {fanMode === 'off' ? 'active' : ''}"
+                                    on:click={() => updateFanMode('off')}
+                                    style="width: 84px; height: 38px">
+                                Off
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Water Control -->
+                    <div class="sensor-card text-center h-100">
+                        <h3>Water Control</h3>
+                        <div class="btn-group mt-2">
+                            <button class="p-0 align-items-center d-flex btn btn-outline-success {waterMode === 'auto' ? 'active' : ''}"
+                                    on:click={() => updateWaterMode('auto')}
+                                    style="width: 84px; height: 38px">
+                                {#if waterMode === 'auto' || theme === "dark"}
+                                    <img class="mx-1" src="/smart.png" alt="smart icon" style="border-radius:16px" width="28" height="28"/>
+                                {:else}
+                                    <img class="mx-1" src="/smart2.png" alt="smart icon" style="border-radius:16px" width="28" height="28"/>
+                                {/if}
+                                Auto
+                            </button>
+
+                            <button class="btn btn-outline-danger {waterMode === 'off' ? 'active' : ''}"
+                                    on:click={() => updateWaterMode('off')}
+                                    style="width: 84px; height: 38px">
+                                Off
+                            </button>
+
+                            <!-- +10ml Button -->
+                            <button class="p-0 water-btn btn btn-outline-info"
+                                    on:click={handleWaterDispense}
+                                    style="width: 84px; height: 38px"
+                                    class:dispensing-active={dispensing}>
+                                +10ml
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="container mt-5">
+            <h2 class="section-title">Sensor Data Trends</h2>
+            <div class="custom-dropdown">
+                <!-- The "button" look for the dropdown toggle -->
+                <button class="dropdown-toggle" on:click={toggleDropdown}>
+                    {options.find(o => o.value === selectedRange)?.label || "Select Range"}
+                    <span class="arrow">{isOpen ? "▲" : "▼"}</span>
+                </button>
+
+                {#if isOpen}
+                    <ul class="dropdown-list">
+                        {#each options as opt}
+                            <li class="dropdown-item"
+                                on:click={() => selectOption(opt)}>
+                                {opt.label}
+                            </li>
+                        {/each}
+                    </ul>
+                {/if}
+            </div>
+
+            <div class="row row-cols-1 row-cols-md-2 g-3 mt-3">
+                <div class="col">
+                    <div class="chart-container">
+                        <canvas id="temperatureChart"></canvas>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="chart-container">
+                        <canvas id="humidityChart"></canvas>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="chart-container">
+                        <canvas id="oxygenChart"></canvas>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="chart-container">
+                        <canvas id="co2Chart"></canvas>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="chart-container">
+                        <canvas id="lightChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer p-md-5 p-4 mb-5 mt-md-5 mt-3" style="padding-bottom: 4px !important">
+        <div class="fw-semibold mb-4 team-title">Team Members</div>
+        <div class="ms-3 team-members">
+            <div>Arash Ganjei</div>
+            <div>Alireza Rezai</div>
+            <div>Mohammad Bagher Mohsenian</div>
+            <div>Mohammad Javad Kariminia</div>
+            <div>Nima Chitsaz</div>
+        </div>
+        <div class="text-center mt-5 team-rights">All rights reserved</div>
+    </footer>
 </div>
-
-<div class="container">
-    <div class="align-items-center d-flex" style="height: 32px;">
-        <p bind:this={lastUpdatedElement} class="last-updated text-muted m-0 me-3">
-            Last Updated: {lastUpdated}
-        </p>
-
-        {#if isLoading}
-            <div class="spinner-border text-primary" role="status" style="width: 24px; height: 24px;">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-        {/if}
-    </div>
-
-
-    <div class="mt-md-4 mt-2">
-
-        <div class="row gx-4 gy-4 flex-column flex-md-row">
-
-            <!-- ✅ Live Data (Left, 2x2 Grid) -->
-            <div class="col-md-7 d-grid gap-3">
-                <h2 class="mb-2">Live Data</h2>
-
-                <div class="row row-cols-2 gx-3 gy-3">
-                    <div class="col">
-                        <div class="sensor-card text-center">
-                            <h3>Temperature</h3>
-                            <p class="m-0 fs-4 text-danger">{latestTemperature}</p>
-                        </div>
-                    </div>
-                    <div class="col">
-                        <div class="sensor-card text-center">
-                            <h3>Humidity</h3>
-                            <p class="m-0 fs-4 text-primary">{latestHumidity}</p>
-                        </div>
-                    </div>
-                    <div class="col">
-                        <div class="sensor-card text-center">
-                            <h3>Oxygen Level</h3>
-                            <p class="m-0 fs-4 text-success">{latestOxygen}</p>
-                        </div>
-                    </div>
-                    <div class="col">
-                        <div class="sensor-card text-center">
-                            <h3>Light Intensity</h3>
-                            <p class="m-0 fs-4 text-warning">{latestLight}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ✅ Controls (Right, Stacked 1x2) -->
-            <div class="col-md-5 d-flex flex-column gap-3">
-                <h2 class="mb-2">Controls</h2>
-
-                <!-- Fan Control -->
-                <div class="sensor-card text-center">
-                    <h3>Fan Control</h3>
-                    <div class="btn-group mt-2">
-                        <button class="p-0 align-items-center d-flex btn btn-outline-success {fanMode === 'auto' ? 'active' : ''}" on:click={() => updateFanMode('auto')}>
-                            {#if fanMode === 'auto'}
-                                <img class="mx-1" src="/smart.png" alt="smart icon" style="border-radius: 16px" width="28px" height="28px"/>
-                            {:else }
-                                <img class="mx-1" src="/smart2.png" alt="smart icon" style="border-radius: 16px" width="28px" height="28px"/>
-                            {/if}
-                            Auto
-                        </button>
-                        <button class="btn btn-outline-primary {fanMode === 'on' ? 'active' : ''}" on:click={() => updateFanMode('on')}>On</button>
-                        <button class="btn btn-outline-danger {fanMode === 'off' ? 'active' : ''}" on:click={() => updateFanMode('off')}>Off</button>
-                    </div>
-                </div>
-
-                <!-- Water Control -->
-                <div class="sensor-card text-center">
-                    <h3>Water Control</h3>
-                    <div class="btn-group mt-2">
-                        <!-- ✅ "Auto" and "Off" buttons stay linked -->
-                        <button class="p-0 align-items-center d-flex btn btn-outline-success {waterMode === 'auto' ? 'active' : ''}" on:click={() => updateWaterMode('auto')}>
-                            {#if waterMode === 'auto'}
-                                <img class="mx-1" src="/smart.png" alt="smart icon" style="border-radius: 16px" width="28px" height="28px"/>
-                            {:else }
-                                <img class="mx-1" src="/smart2.png" alt="smart icon" style="border-radius: 16px" width="28px" height="28px"/>
-                            {/if}
-                            Auto
-                        </button>
-
-                        <button class="btn btn-outline-danger {waterMode === 'off' ? 'active' : ''}"
-                                on:click={() => updateWaterMode('off')}>
-                            Off
-                        </button>
-                        <!-- ✅ "Add 10ml" button is SEPARATE from the group -->
-                        <button class="water-btn btn btn-outline-info text-center p-0" on:click={handleWaterDispense} style="width: 84px; height: 38px">
-                            +10ml
-                        </button>
-                    </div>
-
-
-
-
-                </div>
-
-            </div>
-
-        </div>
-    </div>
-
-
-
-
-    <div class="container mt-5">
-        <h2 class="mb-4">Sensor Data Trends</h2>
-
-        <div class="d-flex align-items-center">
-            <div class="select-container">
-                <select bind:value={selectedRange} on:change={fetchData}>
-                    <option value="1h">Last Hour</option>
-                    <option value="24h">Last 24 Hours</option>
-                    <option value="7d">Last 7 Days</option>
-                    <option value="30d">Last 30 Days</option>
-                    <option value="all">All Data</option>
-                </select>
-            </div>
-        </div>
-
-
-        <div class="row row-cols-1 row-cols-md-2 g-3 mt-3">
-            <div class="col">
-                <div class="chart-container"><canvas id="temperatureChart"></canvas></div>
-            </div>
-            <div class="col">
-                <div class="chart-container"><canvas id="humidityChart"></canvas></div>
-            </div>
-            <div class="col">
-                <div class="chart-container"><canvas id="oxygenChart"></canvas></div>
-            </div>
-            <div class="col">
-                <div class="chart-container"><canvas id="co2Chart"></canvas></div>
-            </div>
-            <div class="col">
-                <div class="chart-container"><canvas id="lightChart"></canvas></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="text-center mt-4">
-
-    </div>
-
-</div>
-
-
-
-
-<footer class="mt-5 font-bold p-md-5 p-4 pb-2 pb-md-2 mb-5" style="color: white; background-color: #0a3622; margin-bottom: 0 !important">
-    <div class="mb-4 fw-semibold" style="color: white; font-size: 36px">
-        Team Members
-    </div>
-    <div class="ms-3">
-        <div style="color: white; font-size: 20px">
-            Arash Ganjei
-        </div>
-        <div style="color: white; font-size: 20px">
-            Alireza Rezai
-        </div>
-        <div style="color: white; font-size: 20px">
-            Mohammad Bagher Mohsenian
-        </div>
-        <div style="color: white; font-size: 20px">
-            Mohammad Javad Kariminia
-        </div>
-        <div style="color: white; font-size: 20px">
-            Nima Chitsaz
-        </div>
-    </div>
-    <div class="mt-5 text-center" style="color: white; font-size: 16px">
-        All rights reserved
-    </div>
-</footer>
-
-
 
 <style>
+    /* Hover: dark green background */
+    .dark .dropdown-item:hover {
+        background-color: darkgreen !important;
+    }
+    :global(.dark) .dropdown-list {
+        background-color: #2e2e2e;
+    }
+    :global(.light) .dropdown-list {
+        background-color: #ffffff;
+    }
+
+    .custom-dropdown {
+        position: relative;
+        display: inline-block;
+        width: 200px;
+    }
+
+    .dropdown-toggle::after {
+        display: none;
+    }
+    .dropdown-toggle {
+        width: 100%;
+        padding: 8px 12px;
+        font-weight: bold;
+        border: 2px solid #2e2e2e;
+        border-radius: 8px;
+        background-color: #ffffff;
+        color: #003d2e;
+        text-align: left;
+        cursor: pointer;
+
+        /* Remove any default arrow from OS or browser */
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: none;
+    }
+
+    .dropdown-toggle:hover {
+        background-color: #f1f1f1;
+    }
+
+    .arrow {
+        float: right;
+    }
+
+    /* The dropdown list container */
+    .dropdown-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        border: 2px solid #515151;
+        border-radius: 8px;
+        background-color: #ffffff;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        /* Remove scroll restrictions so it opens fully */
+        /* max-height: 200px;
+        overflow-y: auto; */
+        z-index: 999; /* So it floats above other elements */
+    }
+
+    .dropdown-item {
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+    .dropdown-item:hover {
+        background-color: #e0f3e0;
+    }
+    /* THEME VARIABLES */
+    :global(.dark) {
+        --bg-color: #2e2e2e;
+        --text-color: #ffffff;
+        --header-bg: #1c1c1c;
+        --header-text: #ffffff;
+        --card-bg: #3a3a3a;
+        --card-text: #ffffff;
+        --button-bg: #555555;
+        --button-text: #ffffff;
+        --select-bg: #ffffff;
+        --select-text: #2e2e2e;
+        --chart-grid: rgba(255,255,255,0.2);
+        --chart-tick: #ffffff;
+    }
+    :global(.light) {
+        --bg-color: #f8f9fa;
+        --text-color: #003d2e;
+        --header-bg: #003d2e;  /* Dark green header in light mode */
+        --header-text: #ffffff;
+        --card-bg: #ffffff;
+        --card-text: #003d2e;
+        --button-bg: #007a7a;
+        --button-text: #ffffff;
+        --select-bg: #ffffff;
+        --select-text: #003d2e;
+        --chart-grid: rgba(0,0,0,0.1);
+        --chart-tick: #003d2e;
+    }
+
+    /* GLOBAL STYLES */
+    body {
+        margin: 0;
+        padding: 0;
+    }
+    .dark, .light {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        min-height: 100vh;
+    }
+    .header {
+        background-color: var(--header-bg);
+        color: var(--header-text);
+        font-size: 48px;
+        white-space: pre-line;
+        position: relative;
+    }
+    .header-subtitle {
+        font-size: 20px;
+        font-weight: normal;
+        opacity: 0.8;
+    }
+    .main-content {
+        padding: 0 15px;
+    }
+    .section-title, h3 {
+        color: var(--text-color);
+    }
+    .sensor-card {
+        min-height: 120px;
+        background: var(--card-bg);
+        color: var(--card-text);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        padding: 16px;
+        border-radius: 10px;
+    }
+
+    /* Water Button styling & states */
     .water-btn {
         font-size: 16px;
-        padding: 10px 20px;
-        border: 2px solid #007a7a;
-        background: white;
-        color: #007a7a;
+        border: 1px solid #2f9595;
+        background: var(--card-bg);
+        color: #2f9595 !important;
         cursor: pointer;
         transition: background 0.2s, color 0.2s;
     }
-
-    .water-btn:active {
-        background: #007a7a;
-        color: white;
+    .water-btn:hover {
+        background: #d3f9f9;
     }
+    .water-btn:active {
+        background: #5be3e3;
+        color: #ffffff;
+    }
+    .dispensing-active {
+        background-color: #28a745 !important;
+        color: #ffffff !important;
+    }
+    .light .water-btn {
+        color: #007a7a;
+    }
+
+    /* Dark mode .btn-outline-success styling */
+    .dark .btn-outline-success {
+        color: #ffffff;
+        border-color: #378a34;
+    }
+    .dark .btn-outline-success.active {
+        background-color: #378a34 !important;
+        color: #ffffff !important;
+    }
+
     .last-updated {
         font-size: 18px;
-        color: #666;  /* ✅ Soft gray */
-        text-align: right;
-        margin-bottom: 10px;
-        transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        opacity: 1;
     }
-
     .last-updated.updated {
-        opacity: 0.5;
-        transform: scale(1.1); /* ✅ Subtle pop effect */
+        animation: fadeIn 1s;
     }
-
-
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
 
     .btn-group button {
         transition: all 0.2s ease-in-out;
+        width: 84px;
+        font-weight: bold;
     }
-
-    /* 🔥 Custom Styled Dropdown */
+    .btn-outline-success.active {
+        background-color: #145214 !important;
+        color: #ffffff !important;
+        border: none;
+    }
+    .btn-outline-primary.active {
+        background-color: #2963c3 !important;
+        color: #ffffff !important;
+        border: none;
+    }
+    .btn-outline-danger.active {
+        background-color: #661414 !important;
+        color: #ffffff !important;
+        border: none;
+    }
+    .btn-outline-info.active {
+        background-color: #007a7a !important;
+        color: #ffffff !important;
+        border: none;
+    }
+    .chart-container {
+        background: var(--card-bg);
+        border-radius: 8px;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 10px;
+        width: 100%;
+        height: 300px;
+    }
     .select-container {
         position: relative;
         display: inline-block;
     }
-
     .select-container select {
-        background-color: white;
-        border: 2px solid #003d2e; /* Dark green border */
-        color: #003d2e; /* Dark green text */
+        background-color: var(--select-bg);
+        border: 2px solid #003d2e;
+        color: var(--select-text);
         font-weight: bold;
         padding: 8px 12px;
         border-radius: 8px;
-        appearance: none; /* ✅ Removes default browser styling */
+        appearance: none;
         cursor: pointer;
-        width: 180px; /* ✅ Adjust width */
+        width: 180px;
     }
-
-    /* 🔥 Dropdown Arrow */
     .select-container::after {
         content: "▼";
         position: absolute;
         top: 50%;
-        right: 10px;
+        right: 12px;
         transform: translateY(-50%);
-        color: #003d2e;
+        color: var(--select-text);
         font-size: 14px;
         pointer-events: none;
     }
-
-    /* 🔥 Hover & Active States */
     .select-container select:hover,
     .select-container select:focus {
         background-color: #f1f1f1;
-        border-color: #145214; /* Darker Green */
+        border-color: #145214;
     }
 
-    body {
-        background-color: #f8f9fa; /* Light background for a clean look */
+    .footer {
+        color: var(--header-text);
+        background-color: var(--header-bg);
+        margin-bottom: 0 !important;
+    }
+    .team-title {
+        font-size: 36px;
+    }
+    .team-members div {
+        font-size: 20px;
+        margin-bottom: 5px;
+    }
+    .team-rights {
+        font-size: 16px;
     }
 
-    .container-fluid {
+    /* Desktop theme toggle: top-right corner */
+    .theme-toggle {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin: 1rem;
+        padding: 10px 16px;
+        border-radius: 20px;
         font-weight: bold;
-        padding: 20px 0;
+        border: none;
+        background-color: #007a7a;
+        color: #ffffff;
+        cursor: pointer;
+        transition: background 0.2s;
     }
-
-    h2, h3 {
-        color: #003d2e; /* Dark green for a professional feel */
+    .theme-toggle:hover {
+        background-color: #009999;
     }
-
-    .sensor-card {
-        min-height: 120px; /* ✅ Ensures all cards match height */
-        background: white;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        padding: 16px;
-        border-radius: 10px;
-        /*transition: transform 0.2s ease-in-out;*/
-    }
-
-    /*.sensor-card:hover {*/
-    /*    transform: scale(1.05); !* Subtle hover effect *!*/
-    /*}*/
-
-
-    .btn-group button {
-        width: 84px; /* Make buttons equal width */
+    .theme-toggle-mobile {
+        border-radius: 20px;
         font-weight: bold;
-    }
-
-    /* ✅ Fan Control Buttons */
-    .btn-outline-success.active {
-        background-color: #145214 !important; /* Dark Green */
-        color: white !important;
         border: none;
+        background-color: #007a7a;
+        color: #ffffff;
+        padding: 10px 16px;
+        cursor: pointer;
+        transition: background 0.2s;
     }
-
-    .btn-outline-primary.active {
-        background-color: #2963c3 !important; /* Dark Blue */
-        color: white !important;
-        border: none;
+    .theme-toggle-mobile:hover {
+        background-color: #009999;
     }
-
-    .btn-outline-danger.active {
-        background-color: #661414 !important; /* Dark Red */
-        color: white !important;
-        border: none;
-    }
-
-
-    /* ✅ Water Control Buttons */
-    .btn-outline-info.active {
-        background-color: #007a7a !important; /* Dark Cyan */
-        color: white !important;
-        border: none;
-    }
-
-
-    .chart-container {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-        padding: 10px;
-    }
-
-    .chart-container {
-        width: 100%;
-        height: 300px;
-    }
-    :global(html, body) {
-        margin: 0;
-        padding: 0;
-    }
-    .hover-effect {
-        transition: background-color 0.2s ease;
-    }
-
-    .hover-effect:hover {
-        background-color: #d3d3d3; /* Grey background */
+    @media (max-width: 767px) {
+        .theme-toggle {
+            display: none !important;
+        }
     }
 </style>
