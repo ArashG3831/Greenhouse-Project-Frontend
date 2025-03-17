@@ -546,13 +546,14 @@
                         </ul>
                     {/if}
                 </div>
-                <div>
-                    <img class="mx-2" src="/smart2.png" height="44px">
-                </div>
-                <div>
-                    <span style="font-size: 16px">AI-Powered predictions enabled</span>
-                </div>
-
+                {#if selectedRange === "7d" || selectedRange === "24h"}
+                    <div>
+                        <img class="fade-in mx-2" src="/smart2.png" height="44px">
+                    </div>
+                    <div>
+                        <span class="fade-in" style="font-size: 16px">AI-Powered predictions</span>
+                    </div>
+                {/if}
             </div>
 
             <div class="row row-cols-1 row-cols-md-2 g-3 mt-3">
@@ -600,6 +601,24 @@
 </div>
 
 <style>
+    .smart-info {
+        display: flex;
+        align-items: center;
+        /* Prevent the text from wrapping underneath the icon */
+        flex-wrap: wrap;
+        /* Optionally, add some margin or padding */
+        margin-left: 1rem;
+    }
+
+    /* Fade in animation similar to last-updated element */
+    .fade-in {
+        animation: fadeIn 1s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
     /* Hover: dark green background */
     .dark .dropdown-item:hover {
         background-color: darkgreen !important;
