@@ -398,15 +398,7 @@
         </button>
 
         <!-- Mobile Theme Toggle -->
-        <button style="font-size: 16px"
-                on:click={toggleTheme}
-                class="theme-toggle-mobile d-block d-md-none mx-auto my-3">
-            {#if theme === 'dark'}
-                🌞 Switch to Light Mode
-            {:else}
-                🌙 Switch to Dark Mode
-            {/if}
-        </button>
+
     </div>
 
     <div class="container main-content">
@@ -425,7 +417,19 @@
             <div class="row gx-4 gy-4 flex-column flex-md-row">
                 <!-- Live Data -->
                 <div class="col-md-7 d-grid gap-3">
-                    <h2 class="section-title">Live Data</h2>
+                    <div class="justify-content-between d-flex align-items-center">
+                        <h2 class="section-title m-0">Live Data</h2>
+
+                        <button style="font-size: 16px; border-radius: 64px"
+                                on:click={toggleTheme}
+                                class="theme-toggle-mobile d-block d-md-none m-0">
+                            {#if theme === 'dark'}
+                                ☀️
+                            {:else}
+                                🌙
+                            {/if}
+                        </button>
+                    </div>
                     <div class="row row-cols-2 gx-3 gy-3">
                         <div class="col">
                             <div class="sensor-card text-center">
@@ -440,7 +444,7 @@
                             </div>
                         </div>
                         <div class="col">
-                            <div class="sensor-card text-center">
+                            <div class="sensor-card text-center h-100">
                                 <h3>Oxygen Level</h3>
                                 <p class="fs-4 text-success">{latestOxygen}</p>
                             </div>
