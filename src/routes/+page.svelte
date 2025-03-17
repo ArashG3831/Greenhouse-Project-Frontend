@@ -526,23 +526,33 @@
         <!-- Charts -->
         <div class="container mt-5">
             <h2 class="section-title">Sensor Data Trends</h2>
-            <div class="custom-dropdown">
-                <!-- The "button" look for the dropdown toggle -->
-                <button class="dropdown-toggle" on:click={toggleDropdown}>
-                    {options.find(o => o.value === selectedRange)?.label || "Select Range"}
-                    <span class="arrow">{isOpen ? "▲" : "▼"}</span>
-                </button>
+            <div class="d-flex align-items-center">
+                <div class="custom-dropdown">
+                    <!-- The "button" look for the dropdown toggle -->
+                    <button class="dropdown-toggle" on:click={toggleDropdown}>
+                        {options.find(o => o.value === selectedRange)?.label || "Select Range"}
+                        <span class="arrow">{isOpen ? "▲" : "▼"}</span>
+                    </button>
 
-                {#if isOpen}
-                    <ul class="dropdown-list">
-                        {#each options as opt}
-                            <li class="dropdown-item"
-                                on:click={() => selectOption(opt)}>
-                                {opt.label}
-                            </li>
-                        {/each}
-                    </ul>
-                {/if}
+
+                    {#if isOpen}
+                        <ul class="dropdown-list">
+                            {#each options as opt}
+                                <li class="dropdown-item"
+                                    on:click={() => selectOption(opt)}>
+                                    {opt.label}
+                                </li>
+                            {/each}
+                        </ul>
+                    {/if}
+                </div>
+                <div>
+                    <img class="mx-2" src="/smart2.png" height="44px">
+                </div>
+                <div>
+                    <span style="font-size: 16px">AI-Powered predictions enabled</span>
+                </div>
+
             </div>
 
             <div class="row row-cols-1 row-cols-md-2 g-3 mt-3">
@@ -604,7 +614,7 @@
     .custom-dropdown {
         position: relative;
         display: inline-block;
-        width: 200px;
+        width: 160px;
     }
 
     .dropdown-toggle::after {
