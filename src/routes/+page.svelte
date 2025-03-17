@@ -74,8 +74,12 @@
     // Track "Dispensing" for the +10ml button
     let dispensing = false;  // true for 1 second after pressing +10ml
 
-    let ip = "http://5.201.140.68:8091";
+    // let ip = "http://5.201.140.68:8091";
 
+<<<<<<< Updated upstream
+=======
+    let ip = "http://5.201.140.68:8091"
+>>>>>>> Stashed changes
     async function fetchData() {
         try {
             isLoading = true;
