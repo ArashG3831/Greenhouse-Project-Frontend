@@ -374,8 +374,10 @@
     });
 </script>
 
-<link rel="preload" as="image" href="/smart.png" />
-<link rel="preload" as="image" href="/smart2.png" />
+<svelte:head>
+    <link rel="preload" as="image" href="/smart.png" />
+    <link rel="preload" as="image" href="/smart2.png" />
+</svelte:head>
 
 
 <!-- Outer wrapper toggles between dark/light -->
