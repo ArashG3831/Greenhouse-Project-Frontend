@@ -76,7 +76,7 @@
 
     // let ip = "http://5.201.140.68:8091";
 
-    let ip = "http://5.201.140.68:8091"
+    let ip = "https://ghapi.iomahdi.ir"
 
     async function fetchData() {
         try {
