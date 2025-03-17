@@ -548,7 +548,11 @@
                 </div>
                 {#if selectedRange === "7d" || selectedRange === "24h"}
                     <div>
-                        <img class="fade-in mx-2" src="/smart2.png" height="44px">
+                        {#if theme === "light"}
+                            <img class="fade-in mx-2" src="/smart2.png" height="44px">
+                        {:else }
+                            <img class="fade-in mx-2" src="/smart.png" height="44px">
+                        {/if}
                     </div>
                     <div>
                         <span class="fade-in" style="font-size: 16px">AI-Powered predictions</span>
