@@ -24,16 +24,17 @@
     let lastValidTimestamp = null;  // ✅ Stores last REAL sensor timestamp
     let lastUpdatedElement;  // 🔥 Store reference to the "Last Updated" element
 
+    let ip = "http://192.168.1.116:8000"
     async function fetchData() {
         try {
             isLoading = true;
             console.log("📡 Fetching Data on Load...");
 
-            const sensorResponse = await fetch(`http://192.168.1.116:8000/api/get_data?range=${selectedRange}`);
+            const sensorResponse = await fetch(ip + `/api/get_data?range=${selectedRange}`);
             sensorData = await sensorResponse.json();
             console.log("🌐 API Response:", sensorData);
 
-            const predictionResponse = await fetch("http://192.168.1.116:8000/api/get_predictions");
+            const predictionResponse = await fetch(ip + "/api/get_predictions");
             predictionData = await predictionResponse.json();
             predictionData = predictionData.reverse();
             console.log("🔮 Prediction Data:", predictionData);
@@ -102,7 +103,7 @@
     async function updateFanMode(mode) {
         try {
             fanMode = mode; // ✅ Instantly update UI before the request
-            const response = await fetch("http://192.168.1.116:8000/api/set_control_state/", {
+            const response = await fetch(ip + "/api/set_control_state/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ fan_mode: mode })
@@ -119,7 +120,7 @@
     async function updateWaterMode(mode) {
         try {
             waterMode = mode; // ✅ Instantly update UI before the request
-            const response = await fetch("http://192.168.1.116:8000/api/set_control_state/", {
+            const response = await fetch(ip + "/api/set_control_state/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ water_mode: mode })
