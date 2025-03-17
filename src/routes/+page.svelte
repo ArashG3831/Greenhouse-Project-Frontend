@@ -374,6 +374,9 @@
     });
 </script>
 
+<link rel="preload" as="image" href="/smart.png" />
+<link rel="preload" as="image" href="/smart2.png" />
+
 
 <!-- Outer wrapper toggles between dark/light -->
 <div class={theme}>
@@ -773,12 +776,12 @@
     .water-btn:hover {
         background: #d3f9f9;
     }
-    .water-btn:active {
-        background: #5be3e3;
-        color: #ffffff;
-    }
+    /*.water-btn:active {*/
+    /*    background: #5be3e3;*/
+    /*    color: #ffffff;*/
+    /*}*/
     .dispensing-active {
-        background-color: #28a745 !important;
+        background-color: #007a7a !important;
         color: #ffffff !important;
     }
     .light .water-btn {
@@ -788,7 +791,7 @@
     /* Dark mode .btn-outline-success styling */
     .dark .btn-outline-success {
         color: #ffffff;
-        border-color: #378a34;
+        border-color: #49d544;
     }
     .dark .btn-outline-success.active {
         background-color: #378a34 !important;
@@ -813,7 +816,7 @@
         font-weight: bold;
     }
     .btn-outline-success.active {
-        background-color: #145214 !important;
+        background-color: #208120 !important;
         color: #ffffff !important;
         border: none;
     }
@@ -823,7 +826,7 @@
         border: none;
     }
     .btn-outline-danger.active {
-        background-color: #661414 !important;
+        background-color: #ae2d2d !important;
         color: #ffffff !important;
         border: none;
     }
