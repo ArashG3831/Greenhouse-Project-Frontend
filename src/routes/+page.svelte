@@ -360,6 +360,7 @@
             isOpen = false;
         }
     }
+    fetchData();
 
     onMount(() => {
         // Check for saved theme
@@ -377,7 +378,6 @@
         // Initialize charts once on mount
         initializeCharts();
         // Fetch data immediately and then every 5 seconds.
-        fetchData();
         setInterval(() => {
             fetchData();
         }, 5000);
@@ -708,11 +708,12 @@
         margin: 0;
         padding: 0;
         list-style: none;
-        /* Remove scroll restrictions so it opens fully */
-        /* max-height: 200px;
-        overflow-y: auto; */
-        z-index: 999; /* So it floats above other elements */
+        z-index: 999;
+
+        /* Ensures the li hover background doesn't exceed the container's rounded corners */
+        overflow: hidden;
     }
+
 
     .dropdown-item {
         padding: 8px 12px;
