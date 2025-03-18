@@ -363,11 +363,12 @@
 
     onMount(() => {
         // Check for saved theme
+        isMobile = window.innerWidth < 768;
+
         const savedTheme = getCookie("theme");
         if (savedTheme) {
             theme = savedTheme;
         }
-        isMobile = window.innerWidth < 768;
         document.addEventListener("click", handleClickOutside);
 
         // Initialize toggles (if needed)
