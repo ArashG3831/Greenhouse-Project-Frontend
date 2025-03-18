@@ -1,5 +1,5 @@
 <script>
-    import { onMount } from "svelte";
+    import { onMount, onDestroy  } from "svelte";
     import Chart from "chart.js/auto";
     import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -354,6 +354,13 @@
         isOpen = false;
     }
 
+    function handleClickOutside(event) {
+        const dropdown = document.querySelector(".custom-dropdown");
+        if (dropdown && !dropdown.contains(event.target)) {
+            isOpen = false;
+        }
+    }
+
     onMount(() => {
         // Check for saved theme
         const savedTheme = getCookie("theme");
@@ -361,6 +368,8 @@
             theme = savedTheme;
         }
         isMobile = window.innerWidth < 768;
+        document.addEventListener("click", handleClickOutside);
+
         // Initialize toggles (if needed)
         updateWaterMode();
         updateFanMode();
@@ -372,6 +381,10 @@
             fetchData();
         }, 5000);
     });
+
+    // onDestroy(() => {
+        // document.removeEventListener("click", handleClickOutside);
+    // });
 </script>
 
 <svelte:head>
@@ -384,7 +397,7 @@
 <div class={theme}>
     <!-- HEADER -->
     <div class="container-fluid header text-center p-5 mb-md-5 mb-3">
-        <div class="fw-bold">Greenhouse Dashboard</div>
+        <div class="mobile-44px fw-bold">Greenhouse Dashboard<span style="font-size: 60%; vertical-align: super;">™</span></div>
         <div class="mt-2 header-subtitle">
             <i>Real-time Environmental Monitoring</i>
         </div>
@@ -405,9 +418,14 @@
     </div>
 
     <div class="container main-content">
-        <div class="d-flex align-items-center header-info">
+        <div class="d-flex align-items-center header-info justify-content-md-start justify-content-between">
             <p bind:this={lastUpdatedElement} class="last-updated m-0 me-3">
-                Last Updated: {lastUpdated}
+                Last Updated:
+                {#if isMobile}
+                    <br>
+                {/if}
+                {lastUpdated}
+
             </p>
             {#if isLoading}
                 <div class="spinner-border" role="status" style="width: 27px; height: 27px;">
@@ -529,41 +547,43 @@
         </div>
 
         <!-- Charts -->
-        <div class="container mt-5">
+        <div class="mt-5">
             <h2 class="section-title">Sensor Data Trends</h2>
-            <div class="d-flex align-items-center">
-                <div class="custom-dropdown">
-                    <!-- The "button" look for the dropdown toggle -->
+            <!-- Container that holds the dropdown + icon + text -->
+            <div class="d-flex align-items-center" style="flex-wrap: nowrap; width: 100%;">
+                <!-- Dropdown (fixed size) -->
+                <div class="custom-dropdown" style="flex: 0 0 auto;">
                     <button class="dropdown-toggle" on:click={toggleDropdown}>
                         {options.find(o => o.value === selectedRange)?.label || "Select Range"}
                         <span class="arrow">{isOpen ? "▲" : "▼"}</span>
                     </button>
-
-
                     {#if isOpen}
                         <ul class="dropdown-list">
                             {#each options as opt}
-                                <li class="dropdown-item"
-                                    on:click={() => selectOption(opt)}>
+                                <li class="dropdown-item" on:click={() => selectOption(opt)}>
                                     {opt.label}
                                 </li>
                             {/each}
                         </ul>
                     {/if}
                 </div>
-                {#if selectedRange === "7d" || selectedRange === "24h"}
-                    <div>
-                        {#if theme === "light"}
-                            <img class="fade-in mx-2" src="/smart2.png" height="44px">
-                        {:else }
-                            <img class="fade-in mx-2" src="/smart.png" height="44px">
-                        {/if}
-                    </div>
-                    <div>
-                        <span class="fade-in" style="font-size: 16px">AI-Powered predictions</span>
-                    </div>
-                {/if}
+
+                <!-- Icon + text container (takes remaining space) -->
+                <div class="d-flex align-items-center" style="flex: 1 1 auto; min-width: 0;">
+                    <!-- Icon does not shrink -->
+                    {#if selectedRange === "7d" || selectedRange === "24h"}
+                        <div>
+                            {#if theme === "light"}
+                                <img class="fade-in mx-2" src="/smart2.png" height="44px">
+                            {:else }
+                                <img class="fade-in mx-2" src="/smart.png" height="44px">
+                            {/if}
+                        </div>
+                        <span class="fade-in" style="flex: 1 1 auto; min-width: 0; text-overflow: ellipsis;">AI-Powered predictions {#if !isMobile}enabled{/if}</span>
+                    {/if}
+                </div>
             </div>
+
 
             <div class="row row-cols-1 row-cols-md-2 g-3 mt-3">
                 <div class="col">
@@ -605,11 +625,12 @@
             <div>Mohammad Javad Kariminia</div>
             <div>Nima Chitsaz</div>
         </div>
-        <div class="text-center mt-5 team-rights">All rights reserved</div>
+        <div class="text-center mt-5 team-rights">All rights reserved ©</div>
     </footer>
 </div>
 
 <style>
+
     .smart-info {
         display: flex;
         align-items: center;
@@ -924,6 +945,9 @@
         background-color: #009999;
     }
     @media (max-width: 767px) {
+        .mobile-44px {
+            font-size: 44px;
+        }
         .theme-toggle {
             display: none !important;
         }
