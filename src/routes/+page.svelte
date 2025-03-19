@@ -360,9 +360,9 @@
             isOpen = false;
         }
     }
-    fetchData();
 
     onMount(() => {
+        fetchData();
         // Check for saved theme
         isMobile = window.innerWidth < 768;
 
