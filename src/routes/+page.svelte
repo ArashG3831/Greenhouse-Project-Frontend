@@ -195,9 +195,9 @@
         if (selectedRange === "1h") {
             step = 1;
         } else if (selectedRange === "7d") {
-            step = 6;
+            step = 1;
         } else if (selectedRange === "24h") {
-            step = 6;
+            step = 1;
         } else if (selectedRange === "30d") {
             step = 1;
         } else if (selectedRange === "all") {
@@ -275,8 +275,10 @@
                         borderColor: color,
                         data: [],
                         fill: false,
+                        borderWidth: 2,
                         pointRadius: 0,
-                        borderWidth: 2
+                        pointHitRadius: 10,
+                        pointHoverRadius: 5
                     },
                     {
                         label: "Predicted " + label,
@@ -285,13 +287,22 @@
                         fill: false,
                         borderWidth: 2,
                         borderDash: [5, 5],
-                        pointRadius: 0
+                        pointRadius: 0,
+                        pointHitRadius: 10,
+                        pointHoverRadius: 5
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                elements: {
+                    point: {
+                        radius: 0,
+                        hitRadius: 10,
+                        hoverRadius: 5
+                    }
+                },
                 scales: {
                     x: {
                         ticks: { color: getTextColor() },
@@ -306,6 +317,9 @@
                 plugins: {
                     legend: {
                         labels: { color: getTextColor() }
+                    },
+                    tooltip: {
+                        enabled: true
                     }
                 }
             }
