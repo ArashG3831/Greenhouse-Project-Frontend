@@ -1,5 +1,5 @@
 <script>
-    import { onMount, onDestroy  } from "svelte";
+    import { onMount  } from "svelte";
     import Chart from "chart.js/auto";
     import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -256,13 +256,44 @@
     }
 
     function updateChart(chart, labels, predLabels, data, predData) {
-        let lastRealIndex = data.length;
-        let emptyData = new Array(lastRealIndex).fill(null);
-        chart.data.labels = [...labels, ...predLabels];
+        // Always update the first (real) dataset
+        chart.data.labels = labels;
         chart.data.datasets[0].data = data;
-        chart.data.datasets[1].data = [...emptyData, ...predData];
+
+        // If we do have predictions, create the second dataset
+        if (predData && predData.length > 0) {
+            const lastRealIndex = data.length;
+            const emptyData = new Array(lastRealIndex).fill(null);
+
+            // Rebuild the entire labels array to include predLabels
+            chart.data.labels = [...labels, ...predLabels];
+
+            // Construct the second dataset
+            const predictedDataset = {
+                label: `Predicted ${chart.data.datasets[0].label}`,
+                borderColor: chart.data.datasets[0].borderColor,
+                data: [...emptyData, ...predData],
+                fill: false,
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                pointHitRadius: 10,
+                pointHoverRadius: 5
+            };
+
+            // Replace datasets with two: real + predicted
+            chart.data.datasets = [
+                chart.data.datasets[0],
+                predictedDataset
+            ];
+        } else {
+            // No prediction data => remove the second dataset
+            chart.data.datasets = [chart.data.datasets[0]];
+        }
+
         chart.update();
     }
+
 
     function createChart(ctx, label, color) {
         return new Chart(ctx, {
@@ -377,29 +408,25 @@
 
     onMount(() => {
         fetchData();
-        // Check for saved theme
         isMobile = window.innerWidth < 768;
 
         const savedTheme = getCookie("theme");
         if (savedTheme) {
             theme = savedTheme;
         }
-        document.addEventListener("click", handleClickOutside);
 
-        // Initialize toggles (if needed)
         updateWaterMode();
         updateFanMode();
-        // Initialize charts once on mount
+
         initializeCharts();
-        // Fetch data immediately and then every 5 seconds.
+
+        document.addEventListener("click", handleClickOutside);
+
         setInterval(() => {
             fetchData();
         }, 5000);
     });
 
-    // onDestroy(() => {
-        // document.removeEventListener("click", handleClickOutside);
-    // });
 </script>
 
 <svelte:head>
