@@ -142,6 +142,8 @@
         latestLight = latestData?.light_illumination?.toFixed(2) + " lx" || "N/A";
     }
 
+    let fanIsRunning = false;
+
     async function updateFanMode(mode) {
         try {
             fanMode = mode;
@@ -152,14 +154,15 @@
             });
             const data = await response.json();
             fanMode = data.fan_mode;
+            fanIsRunning = data.fan_is_running;  // update runtime state here
         } catch (error) {
             console.error("❌ Error updating fan control:", error);
         }
     }
 
+    let waterDispenseActive;
     async function updateWaterMode(mode) {
         try {
-            waterMode = mode;
             const response = await fetch(ip + "/api/set_control_state/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -167,10 +170,26 @@
             });
             const data = await response.json();
             waterMode = data.water_mode;
+
+            // Check if the water dispense was triggered.
+            // data.last_water_dispense should be an ISO timestamp (or null if no dispense occurred).
+            if (data.last_water_dispense) {
+                const dispenseTime = new Date(data.last_water_dispense);
+                const diff = Date.now() - dispenseTime.getTime();
+                // If the last dispense was less than 3 seconds ago, trigger the animation.
+                if (diff < 3000) {
+                    waterDispenseActive = true;
+                    // Remove the animation flag after 2 seconds
+                    setTimeout(() => {
+                        waterDispenseActive = false;
+                    }, 2000);
+                }
+            }
         } catch (error) {
             console.error("❌ Error updating water control:", error);
         }
     }
+
 
     async function handleWaterDispense() {
         // Indicate success style for 1 second without affecting waterMode.
@@ -406,8 +425,54 @@
         }
     }
 
+    let outsideTempNow = "Loading...";
+    let outsideWindNow = "Loading...";
+    let outsideTempTomorrow = "Loading...";
+    let outsideWindTomorrow = "Loading...";
+
+    async function fetchOutsideWeather() {
+        try {
+            // 1. Fetch current weather for Tehran using Open-Meteo
+            const currentResponse = await fetch(
+                "https://api.open-meteo.com/v1/forecast?latitude=35.6892&longitude=51.3890&current_weather=true&timezone=auto"
+            );
+            const currentData = await currentResponse.json();
+
+            if (!currentData.current_weather) {
+                throw new Error("No current weather data available");
+            }
+            outsideTempNow = currentData.current_weather.temperature.toFixed(1);
+            outsideWindNow = currentData.current_weather.windspeed.toFixed(1);
+
+            // 2. Compute tomorrow's date in YYYY-MM-DD format
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            const yyyy = tomorrow.getFullYear();
+            const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+            const dd = String(tomorrow.getDate()).padStart(2, '0');
+            const tomorrowStr = `${yyyy}-${mm}-${dd}`;
+
+            // 3. Fetch daily forecast for tomorrow (max temperature & max wind speed)
+            const forecastResponse = await fetch(
+                `https://api.open-meteo.com/v1/forecast?latitude=35.6892&longitude=51.3890&daily=temperature_2m_max,wind_speed_10m_max&timezone=auto&start_date=${tomorrowStr}&end_date=${tomorrowStr}`
+            );
+            const forecastData = await forecastResponse.json();
+
+            if (!forecastData.daily) {
+                throw new Error("No forecast data available");
+            }
+            outsideTempTomorrow = forecastData.daily.temperature_2m_max[0].toFixed(1);
+            outsideWindTomorrow = forecastData.daily.wind_speed_10m_max[0].toFixed(1);
+        } catch (error) {
+            console.error("❌ Error fetching outside weather:", error);
+        }
+    }
+
     onMount(() => {
         fetchData();
+        fetchOutsideWeather();
+
         isMobile = window.innerWidth < 768;
 
         const savedTheme = getCookie("theme");
@@ -525,10 +590,14 @@
                 <div class="col-md-5 d-flex flex-column gap-3">
                     <h2 class="section-title">Controls</h2>
 
-                    <!-- Fan Control -->
+                    <!-- Fan Control Card -->
                     <div class="sensor-card text-center h-100">
-                        <h3>Fan Control</h3>
-                        <div class="btn-group mt-2">
+                        <h3 class="text-center">
+                            <img src="/fan-blades-icon.svg" alt="Fan Icon" class="me-1 mb-1 {fanIsRunning ? 'spinning-icon' : ''}" style="max-width: 36px;">
+                            <!-- Always show the icon; apply the 'spinning-icon' class conditionally -->
+                            Fan Control
+                        </h3>
+                        <div class="btn-group my-2">
                             <button class="p-0 align-items-center d-flex btn btn-outline-success {fanMode === 'auto' ? 'active' : ''}"
                                     on:click={() => updateFanMode('auto')}
                                     style="width: 84px; height: 38px">
@@ -554,10 +623,11 @@
                         </div>
                     </div>
 
+
                     <!-- Water Control -->
                     <div class="sensor-card text-center h-100">
                         <h3>Water Control</h3>
-                        <div class="btn-group mt-2">
+                        <div class="btn-group my-2">
                             <button class="p-0 align-items-center d-flex btn btn-outline-success {waterMode === 'auto' ? 'active' : ''}"
                                     on:click={() => updateWaterMode('auto')}
                                     style="width: 84px; height: 38px">
@@ -569,27 +639,42 @@
                                 Auto
                             </button>
 
+                            <!-- +10ml Button -->
+                            <button class="p-0 water-btn btn btn-outline-info"
+                                    on:click={handleWaterDispense}
+                                    style="width: 84px; height: 38px"
+                                    class:dispensing-active={waterDispenseActive}>
+                                +10ml
+                            </button>
+
                             <button class="btn btn-outline-danger {waterMode === 'off' ? 'active' : ''}"
                                     on:click={() => updateWaterMode('off')}
                                     style="width: 84px; height: 38px">
                                 Off
                             </button>
 
-                            <!-- +10ml Button -->
-                            <button class="p-0 water-btn btn btn-outline-info"
-                                    on:click={handleWaterDispense}
-                                    style="width: 84px; height: 38px"
-                                    class:dispensing-active={dispensing}>
-                                +10ml
-                            </button>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <div class="col w-100 mt-md-5 mt-4">
+                <h2 class="mb-4">Outside Weather</h2>
+
+                <div class="sensor-card text-center" style="height: auto !important;">
+                    <p class="fs-5 mb-2">
+                        <strong>Now:</strong> {outsideTempNow}°C, Wind {outsideWindNow} m/s
+                    </p>
+                    <p class="fs-5 mb-2">
+                        <strong>Tomorrow:</strong> {outsideTempTomorrow}°C, Wind {outsideWindTomorrow} m/s
+                    </p>
+                </div>
+            </div>
+
         </div>
 
         <!-- Charts -->
-        <div class="mt-5">
+        <div class="mt-md-5 mt-4">
             <h2 class="section-title">Sensor Data Trends</h2>
             <!-- Container that holds the dropdown + icon + text -->
             <div class="d-flex align-items-center" style="flex-wrap: nowrap; width: 100%;">
@@ -672,6 +757,28 @@
 </div>
 
 <style>
+    .spinning-icon {
+        animation: spin 2s linear infinite;
+        /* can help reduce flicker or pixelation in some cases */
+        will-change: transform;
+        backface-visibility: hidden;
+    }
+
+    @keyframes spin {
+        0%   { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+
+    .water-btn.dispensing-active {
+        animation: waterFlash 2s ease;
+    }
+
+    @keyframes waterFlash {
+        0%   { background-color: #007a7a; }
+        50%  { background-color: #28a745; }
+        100% { background-color: #007a7a; }
+    }
 
     .smart-info {
         display: flex;
@@ -822,7 +929,7 @@
         color: var(--text-color);
     }
     .sensor-card {
-        min-height: 120px;
+        /*min-height: 120px;*/
         background: var(--card-bg);
         color: var(--card-text);
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
