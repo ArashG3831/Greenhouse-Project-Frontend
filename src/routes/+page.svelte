@@ -593,7 +593,7 @@
                     <!-- Fan Control Card -->
                     <div class="sensor-card text-center h-100">
                         <h3 class="text-center">
-                            <img src="/fan-blades-icon.svg" alt="Fan Icon" class="me-1 mb-1 {fanIsRunning ? 'spinning-icon' : ''}" style="max-width: 36px;">
+                            <img src="/fan-blades-icon.svg" alt="Fan Icon" class="me-1 mb-1 {fanIsRunning ? 'spinning-icon' : ''}" style="max-width: 28px;">
                             <!-- Always show the icon; apply the 'spinning-icon' class conditionally -->
                             Fan Control
                         </h3>
