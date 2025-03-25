@@ -61,10 +61,6 @@
     let latestOxygen = "Loading...";
     let latestLight = "Loading...";
 
-    // Fan & water modes
-    let fanMode = null;   // "auto", "on", or "off"
-    let waterMode = null; // "auto", "on", or "off"
-
     // Track "Last Updated" and loading state
     let lastUpdated = "Loading...";
     let isLoading = true;
@@ -142,11 +138,15 @@
         latestLight = latestData?.light_illumination?.toFixed(2) + " lx" || "N/A";
     }
 
+    let fanMode = null;
     let fanIsRunning = false;
+    let waterMode = null;
+    let waterControl = { water_mode: "auto", last_water_dispense: null };
+    let waterDispensedAgo = "Loading...";
+    let waterDispenseActive;
 
     async function updateFanMode(mode) {
         try {
-            fanMode = mode;
             const response = await fetch(ip + "/api/set_control_state/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -154,13 +154,12 @@
             });
             const data = await response.json();
             fanMode = data.fan_mode;
-            fanIsRunning = data.fan_is_running;  // update runtime state here
+            fanIsRunning = data.fan_is_running;
         } catch (error) {
             console.error("❌ Error updating fan control:", error);
         }
     }
 
-    let waterDispenseActive;
     async function updateWaterMode(mode) {
         try {
             const response = await fetch(ip + "/api/set_control_state/", {
@@ -170,38 +169,24 @@
             });
             const data = await response.json();
             waterMode = data.water_mode;
-
-            // Check if the water dispense was triggered.
-            // data.last_water_dispense should be an ISO timestamp (or null if no dispense occurred).
-            if (data.last_water_dispense) {
-                const dispenseTime = new Date(data.last_water_dispense);
-                const diff = Date.now() - dispenseTime.getTime();
-                // If the last dispense was less than 3 seconds ago, trigger the animation.
-                if (diff < 3000) {
-                    waterDispenseActive = true;
-                    // Remove the animation flag after 2 seconds
-                    setTimeout(() => {
-                        waterDispenseActive = false;
-                    }, 2000);
-                }
-            }
+            waterControl = data;
+            updateTimeDiff();
         } catch (error) {
             console.error("❌ Error updating water control:", error);
         }
     }
 
-
-    let waterControl = { water_mode: "auto", last_water_dispense: null };
-    let waterDispensedAgo = "Loading...";
-
-    async function fetchControlState() {
+    async function handleWaterDispense() {
         try {
-            const response = await fetch("https://ghapi.iomahdi.ir/api/get_control_state/");
-            const data = await response.json();
-            waterControl = data;
-            updateTimeDiff();
+            await fetch(ip + "/api/set_control_state/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ water_mode: "+10ml" })
+            });
+            // After dispensing, fetch the updated control state.
+            await updateWaterMode("auto");
         } catch (err) {
-            console.error("Error fetching control state", err);
+            console.error("❌ Error dispensing water:", err);
         }
     }
 
@@ -211,34 +196,32 @@
             return;
         }
         const lastTime = new Date(waterControl.last_water_dispense);
-        const now = new Date();
-        const diffSec = Math.floor((now - lastTime) / 1000);
-        if (diffSec < 60) {
-            waterDispensedAgo = `${diffSec} seconds ago`;
+        const diffSec = Math.floor((Date.now() - lastTime.getTime()) / 1000);
+        if (diffSec < 1) {
+            waterDispensedAgo = "Just now";
+        } else if (diffSec < 60) {
+            waterDispensedAgo = diffSec === 1 ? "1 second ago" : `${diffSec} seconds ago`;
         } else if (diffSec < 3600) {
-            const min = Math.floor(diffSec / 60);
-            waterDispensedAgo = `${min} minutes ago`;
+            const minutes = Math.floor(diffSec / 60);
+            waterDispensedAgo = minutes === 1 ? "1 minute ago" : `${minutes} minutes ago`;
         } else {
-            const hrs = Math.floor(diffSec / 3600);
-            waterDispensedAgo = `${hrs} hours ago`;
+            const hours = Math.floor(diffSec / 3600);
+            waterDispensedAgo = hours === 1 ? "1 hour ago" : `${hours} hours ago`;
         }
     }
 
-    async function handleWaterDispense() {
-        // Indicate success style for 1 second without affecting waterMode.
-        dispensing = true;
+
+    async function fetchControlState() {
         try {
-            await fetch(ip + "/api/set_control_state/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ water_dispense: "+10ml" })
-            });
+            const response = await fetch(ip + "/api/get_control_state/");
+            const data = await response.json();
+            fanMode = data.fan_mode;
+            fanIsRunning = data.fan_is_running;
+            waterMode = data.water_mode;
+            waterControl = data;
+            updateTimeDiff();
         } catch (err) {
-            console.error("❌ Error dispensing water:", err);
-        } finally {
-            setTimeout(() => {
-                dispensing = false;
-            }, 1000);
+            console.error("Error fetching control state", err);
         }
     }
 
@@ -631,7 +614,7 @@
                     <!-- Fan Control Card -->
                     <div class="sensor-card text-center h-100">
                         <h3 class="text-center">
-                            <img src="/ezgif-36180c5c8f53a3.gif" alt="Animated Fan Blowing Wind" class="{fanIsRunning ? '' : 'd-none'}" style="max-width: 30px; transform: scaleX(-1); margin-right: -16px; z-index: 1">
+<!--                            <img src="/ezgif-36180c5c8f53a3.gif" alt="Animated Fan Blowing Wind" class="{fanIsRunning ? '' : 'd-none'}" style="max-width: 30px; transform: scaleX(-1); margin-right: -16px; z-index: 1">-->
 
                             <img src="/fan-blades-icon.svg" alt="Fan Icon" class="me-1 mb-1 {fanIsRunning ? 'spinning-icon' : ''}" style="max-width: 28px; z-index: 100">
 
