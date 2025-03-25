@@ -574,9 +574,9 @@
                 on:click={toggleTheme}
                 class="theme-toggle d-none d-md-block">
             {#if theme === 'dark'}
-                ☀️ Switch to Light Mode
+                ☀️ Switch to Light Theme
             {:else}
-                🌙 Switch to Dark Mode
+                🌙 Switch to Dark Theme
             {/if}
         </button>
 
@@ -615,9 +615,9 @@
                                 on:click={toggleTheme}
                                 class="theme-toggle-mobile d-block d-md-none m-0">
                             {#if theme === 'dark'}
-                                ☀️ Switch to Light Mode
+                                ☀️ Switch to Light Theme
                             {:else}
-                                🌙 Switch to Dark Mode
+                                🌙 Switch to Dark Theme
                             {/if}
                         </button>
                     </div>
