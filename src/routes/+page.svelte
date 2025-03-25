@@ -663,10 +663,12 @@
                     <div class="sensor-card text-center mb-3">
                         <h3 class="text-center">
                             <!-- Fan icon that spins -->
-                            <img src="/fan-blades-icon.svg"
-                                 alt="Fan Icon"
-                                 class="me-1 mb-1 {fanIsRunning ? 'spinning-icon' : ''}"
-                                 style="max-width: 28px;">
+                            <img
+                                    src="/fan-blades-icon.svg"
+                                    alt="Fan Icon"
+                                    class="me-1 mb-1 {fanIsRunning ? 'spinning-icon' : ''} {theme === 'dark' ? 'inverted-svg' : ''}"
+                                    style="max-width: 28px;">
+
                             Fan Control
                         </h3>
                         <div class="btn-group my-2">
@@ -769,7 +771,7 @@
             <h2 class="section-title mb-4 mt-md-5 mt-4">
                 Official Weather Forecast
                 <br>
-                <small class="text-muted" style="font-size: 0.7em;">
+                <small class="powered-text" style="font-size: 0.7em;">
                     Powered by the Open-Meteo API
                 </small>
             </h2>
@@ -889,6 +891,25 @@
 </div>
 
 <style>
+    .inverted-svg {
+        -webkit-filter: invert(1);
+        filter: invert(1);
+    }
+
+    .powered-text {
+        font-size: 0.7em;
+        /* fallback color from Bootstrap text-muted if needed */
+        color: var(--bs-text-muted);
+    }
+
+    .light .powered-text {
+        color: #6c757d; /* white in light mode */
+    }
+
+    .dark .powered-text {
+        color: #d3d3d3; /* light grey in dark mode */
+    }
+
     .responsive-width {
         /* For large screens (above 1200px) */
         max-width: 20%;
