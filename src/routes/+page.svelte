@@ -190,34 +190,40 @@
         }
     }
 
+    let waterUpdatedElement; // Bind this to the "Last watered" element
+
     function updateTimeDiff() {
         if (!waterControl.last_water_dispense) {
             waterDispensedAgo = "Never";
-            return;
-        }
-        const lastTime = new Date(waterControl.last_water_dispense);
-        const diffSec = Math.floor((Date.now() - lastTime.getTime()) / 1000);
-        if (diffSec < 1) {
-            waterDispensedAgo = "Just now";
-        } else if (diffSec < 60) {
-            waterDispensedAgo = diffSec === 1 ? "1 second ago" : `${diffSec} seconds ago`;
-        } else if (diffSec < 3600) {
-            const minutes = Math.floor(diffSec / 60);
-            waterDispensedAgo = minutes === 1 ? "1 minute ago" : `${minutes} minutes ago`;
         } else {
-            const hours = Math.floor(diffSec / 3600);
-            waterDispensedAgo = hours === 1 ? "1 hour ago" : `${hours} hours ago`;
+            const lastTime = new Date(waterControl.last_water_dispense);
+            const diffSec = Math.floor((Date.now() - lastTime.getTime()) / 1000);
+            if (diffSec < 0) {
+                waterDispensedAgo = "Just now";
+            } else if (diffSec < 60) {
+                waterDispensedAgo = diffSec === 1 ? "1 second ago" : `${diffSec} seconds ago`;
+            } else if (diffSec < 3600) {
+                const minutes = Math.floor(diffSec / 60);
+                waterDispensedAgo = minutes === 1 ? "1 minute ago" : `${minutes} minutes ago`;
+            } else {
+                const hours = Math.floor(diffSec / 3600);
+                waterDispensedAgo = hours === 1 ? "1 hour ago" : `${hours} hours ago`;
+            }
+        }
+        // Trigger the fade-in on the dynamic part only:
+        if (waterUpdatedElement) {
+            waterUpdatedElement.classList.remove("updated");
+            void waterUpdatedElement.offsetWidth; // force reflow
+            waterUpdatedElement.classList.add("updated");
         }
     }
 
 
+    // Example function to fetch control state (ensure waterControl gets updated)
     async function fetchControlState() {
         try {
-            const response = await fetch(ip + "/api/get_control_state/");
+            const response = await fetch("https://ghapi.iomahdi.ir/api/get_control_state/");
             const data = await response.json();
-            fanMode = data.fan_mode;
-            fanIsRunning = data.fan_is_running;
-            waterMode = data.water_mode;
             waterControl = data;
             updateTimeDiff();
         } catch (err) {
@@ -446,21 +452,54 @@
     let outsideTempTomorrow = "Loading...";
     let outsideWindTomorrow = "Loading...";
 
+    let currentWeatherCode = null;
+    let forecastWeatherCode = null;
+
+    // Mapping from Open-Meteo weather codes to OpenWeatherMap icon URLs.
+    // (Adjust these mappings to suit your needs.)
+    function getWeatherIconUrl(code) {
+        const mapping = {
+            0: "https://openweathermap.org/img/wn/01d@2x.png",  // Clear sky
+            1: "https://openweathermap.org/img/wn/02d@2x.png",  // Mainly clear
+            2: "https://openweathermap.org/img/wn/03d@2x.png",  // Partly cloudy
+            3: "https://openweathermap.org/img/wn/04d@2x.png",  // Overcast
+            45: "https://openweathermap.org/img/wn/50d@2x.png", // Fog
+            48: "https://openweathermap.org/img/wn/50d@2x.png", // Depositing rime fog
+            51: "https://openweathermap.org/img/wn/09d@2x.png", // Drizzle: Light
+            53: "https://openweathermap.org/img/wn/09d@2x.png", // Drizzle: Moderate
+            55: "https://openweathermap.org/img/wn/09d@2x.png", // Drizzle: Dense intensity
+            61: "https://openweathermap.org/img/wn/10d@2x.png", // Rain: Slight
+            63: "https://openweathermap.org/img/wn/10d@2x.png", // Rain: Moderate
+            65: "https://openweathermap.org/img/wn/10d@2x.png", // Rain: Heavy intensity
+            71: "https://openweathermap.org/img/wn/13d@2x.png", // Snow fall: Slight
+            73: "https://openweathermap.org/img/wn/13d@2x.png", // Snow fall: Moderate
+            75: "https://openweathermap.org/img/wn/13d@2x.png", // Snow fall: Heavy
+            80: "https://openweathermap.org/img/wn/10d@2x.png", // Rain showers: Slight
+            81: "https://openweathermap.org/img/wn/10d@2x.png", // Rain showers: Moderate
+            82: "https://openweathermap.org/img/wn/10d@2x.png", // Rain showers: Violent
+            95: "https://openweathermap.org/img/wn/11d@2x.png", // Thunderstorm: Slight/moderate
+            96: "https://openweathermap.org/img/wn/11d@2x.png", // Thunderstorm with slight hail
+            99: "https://openweathermap.org/img/wn/11d@2x.png"  // Thunderstorm with heavy hail
+        };
+        return mapping[code] || "https://openweathermap.org/img/wn/50d@2x.png";
+    }
+
+    // Fetch outside weather using Open-Meteo
     async function fetchOutsideWeather() {
         try {
-            // 1. Fetch current weather for Tehran using Open-Meteo
+            // Fetch current weather for Tehran
             const currentResponse = await fetch(
                 "https://api.open-meteo.com/v1/forecast?latitude=35.6892&longitude=51.3890&current_weather=true&timezone=auto"
             );
             const currentData = await currentResponse.json();
-
             if (!currentData.current_weather) {
                 throw new Error("No current weather data available");
             }
             outsideTempNow = currentData.current_weather.temperature.toFixed(1);
             outsideWindNow = currentData.current_weather.windspeed.toFixed(1);
+            currentWeatherCode = currentData.current_weather.weathercode;
 
-            // 2. Compute tomorrow's date in YYYY-MM-DD format
+            // Compute tomorrow's date in YYYY-MM-DD format
             const today = new Date();
             const tomorrow = new Date(today);
             tomorrow.setDate(today.getDate() + 1);
@@ -469,17 +508,17 @@
             const dd = String(tomorrow.getDate()).padStart(2, '0');
             const tomorrowStr = `${yyyy}-${mm}-${dd}`;
 
-            // 3. Fetch daily forecast for tomorrow (max temperature & max wind speed)
+            // Fetch daily forecast for tomorrow including the weather code
             const forecastResponse = await fetch(
-                `https://api.open-meteo.com/v1/forecast?latitude=35.6892&longitude=51.3890&daily=temperature_2m_max,wind_speed_10m_max&timezone=auto&start_date=${tomorrowStr}&end_date=${tomorrowStr}`
+                `https://api.open-meteo.com/v1/forecast?latitude=35.6892&longitude=51.3890&daily=temperature_2m_max,wind_speed_10m_max,weathercode&timezone=auto&start_date=${tomorrowStr}&end_date=${tomorrowStr}`
             );
             const forecastData = await forecastResponse.json();
-
             if (!forecastData.daily) {
                 throw new Error("No forecast data available");
             }
             outsideTempTomorrow = forecastData.daily.temperature_2m_max[0].toFixed(1);
             outsideWindTomorrow = forecastData.daily.wind_speed_10m_max[0].toFixed(1);
+            forecastWeatherCode = forecastData.daily.weathercode[0];
         } catch (error) {
             console.error("❌ Error fetching outside weather:", error);
         }
@@ -563,12 +602,15 @@
         </div>
 
         <div class="mt-md-4 mt-2">
-            <div class="row gx-4 gy-4 flex-column flex-md-row">
-                <!-- Live Data -->
-                <div class="col-md-7 d-grid gap-3">
-                    <div class="justify-content-between d-flex align-items-center">
-                        <h2 class="section-title m-0">Live Data</h2>
+            <!-- Use align-items-stretch so both columns fill the same vertical height -->
+            <div class="row gx-4 gy-4 align-items-stretch">
 
+                <!-- LEFT COLUMN (Live Data) -->
+                <div class="col-md-7 d-flex flex-column">
+                    <!-- Heading row (no flex-grow, just the heading) -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="section-title m-0">Live Data</h2>
+                        <!-- Mobile Theme Toggle -->
                         <button style="font-size: 16px; border-radius: 64px"
                                 on:click={toggleTheme}
                                 class="theme-toggle-mobile d-block d-md-none m-0">
@@ -579,27 +621,30 @@
                             {/if}
                         </button>
                     </div>
-                    <div class="row row-cols-2 gx-3 gy-3">
-                        <div class="col">
-                            <div class="sensor-card text-center">
+
+                    <!-- Container for the sensor cards. Use flex-grow-1 so it fills leftover space -->
+                    <div class="row row-cols-2 gx-3 gy-3 flex-grow-1">
+                        <!-- Each .col is also d-flex so the card can fill it -->
+                        <div class="col d-flex">
+                            <div class="sensor-card text-center flex-fill">
                                 <h3>Temperature</h3>
                                 <p class="fs-4 text-danger">{latestTemperature}</p>
                             </div>
                         </div>
-                        <div class="col">
-                            <div class="sensor-card text-center">
+                        <div class="col d-flex">
+                            <div class="sensor-card text-center flex-fill">
                                 <h3>Humidity</h3>
                                 <p class="fs-4 text-primary">{latestHumidity}</p>
                             </div>
                         </div>
-                        <div class="col">
-                            <div class="sensor-card text-center h-100">
+                        <div class="col d-flex">
+                            <div class="sensor-card text-center flex-fill">
                                 <h3>Oxygen Level</h3>
                                 <p class="fs-4 text-success">{latestOxygen}</p>
                             </div>
                         </div>
-                        <div class="col">
-                            <div class="sensor-card text-center">
+                        <div class="col d-flex">
+                            <div class="sensor-card text-center flex-fill">
                                 <h3>Light Intensity</h3>
                                 <p class="fs-4 text-warning">{latestLight}</p>
                             </div>
@@ -607,38 +652,39 @@
                     </div>
                 </div>
 
-                <!-- Controls -->
-                <div class="col-md-5 d-flex flex-column gap-3">
-                    <h2 class="section-title">Controls</h2>
+                <!-- RIGHT COLUMN (Controls) -->
+                <div class="col-md-5 d-flex flex-column">
+                    <!-- Heading row -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="section-title m-0">Controls</h2>
+                    </div>
 
                     <!-- Fan Control Card -->
-                    <div class="sensor-card text-center h-100">
+                    <div class="sensor-card text-center mb-3">
                         <h3 class="text-center">
-                            <img src="/ezgif-36180c5c8f53a3.gif" alt="Animated Fan Blowing Wind" class="{fanIsRunning ? '' : 'd-none'}" style="max-width: 30px; transform: scaleX(-1); margin-right: -16px; z-index: 1">
-
-                            <img src="/fan-blades-icon.svg" alt="Fan Icon" class="me-1 mb-1 {fanIsRunning ? 'spinning-icon' : ''}" style="max-width: 28px; z-index: 100">
-
-                            <!-- Always show the icon; apply the 'spinning-icon' class conditionally -->
+                            <!-- Fan icon that spins -->
+                            <img src="/fan-blades-icon.svg"
+                                 alt="Fan Icon"
+                                 class="me-1 mb-1 {fanIsRunning ? 'spinning-icon' : ''}"
+                                 style="max-width: 28px;">
                             Fan Control
                         </h3>
                         <div class="btn-group my-2">
                             <button class="p-0 align-items-center d-flex btn btn-outline-success {fanMode === 'auto' ? 'active' : ''}"
                                     on:click={() => updateFanMode('auto')}
                                     style="width: 84px; height: 38px">
-                                {#if fanMode === 'auto' || theme === "dark"}
+                                {#if fanMode === 'auto' || theme === 'dark'}
                                     <img class="mx-1" src="/smart.png" alt="smart icon" style="border-radius:16px" width="28" height="28"/>
                                 {:else}
                                     <img class="mx-1" src="/smart2.png" alt="smart icon" style="border-radius:16px" width="28" height="28"/>
                                 {/if}
                                 Auto
                             </button>
-
                             <button class="btn btn-outline-primary {fanMode === 'on' ? 'active' : ''}"
                                     on:click={() => updateFanMode('on')}
                                     style="width: 84px; height: 38px">
                                 On
                             </button>
-
                             <button class="btn btn-outline-danger {fanMode === 'off' ? 'active' : ''}"
                                     on:click={() => updateFanMode('off')}
                                     style="width: 84px; height: 38px">
@@ -647,57 +693,117 @@
                         </div>
                     </div>
 
-
-                    <!-- Water Control -->
-                    <div class="sensor-card text-center h-100">
+                    <!-- Water Control Card -->
+                    <div class="sensor-card text-center">
                         <h3>Water Control</h3>
-                        <p>Last watered: {waterDispensedAgo}</p>
-
+                        <p class="last-watered mb-2">
+                            Last watered:
+                            <span bind:this={waterUpdatedElement} class="water-time">{waterDispensedAgo}</span>
+                        </p>
                         <div class="btn-group my-2">
                             <button class="p-0 align-items-center d-flex btn btn-outline-success {waterMode === 'auto' ? 'active' : ''}"
                                     on:click={() => updateWaterMode('auto')}
                                     style="width: 84px; height: 38px">
-                                {#if waterMode === 'auto' || theme === "dark"}
+                                {#if waterMode === 'auto' || theme === 'dark'}
                                     <img class="mx-1" src="/smart.png" alt="smart icon" style="border-radius:16px" width="28" height="28"/>
                                 {:else}
                                     <img class="mx-1" src="/smart2.png" alt="smart icon" style="border-radius:16px" width="28" height="28"/>
                                 {/if}
                                 Auto
                             </button>
-
-                            <!-- +10ml Button -->
                             <button class="p-0 water-btn btn btn-outline-info"
                                     on:click={handleWaterDispense}
                                     style="width: 84px; height: 38px"
                                     class:dispensing-active={waterDispenseActive}>
                                 +10ml
                             </button>
-
                             <button class="btn btn-outline-danger {waterMode === 'off' ? 'active' : ''}"
                                     on:click={() => updateWaterMode('off')}
                                     style="width: 84px; height: 38px">
                                 Off
                             </button>
-
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col w-100 mt-md-5 mt-4">
-                <h2 class="mb-4">Outside Weather</h2>
+            <!-- Outside Weather Section -->
+<!--            <div class="row g-4 mt-md-5 mt-4">-->
+<!--                <h2 class="section-title mb-4">Outside Weather</h2>-->
+<!--                <div class="" style="display: flex; justify-content: center; align-items: center;">-->
+<!--                    &lt;!&ndash; Current Weather (Now) &ndash;&gt;-->
+<!--                    <div class="mx-2">-->
+<!--                        <div class="sensor-card weather-card text-center p-3">-->
+<!--                            <h4 class="fw-bold mb-2">Now</h4>-->
+<!--                            <div class="weather-icon mb-3">-->
+<!--                                <img src="{getWeatherIconUrl(currentWeatherCode)}" alt="Current Weather Icon" style="width:60px; height:60px;" />-->
+<!--                            </div>-->
+<!--                            <p class="fs-5 mb-1 text-info">{outsideTempNow}°C</p>-->
+<!--                            <p class="fs-6 text-secondary">Wind {outsideWindNow} m/s</p>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                    &lt;!&ndash; Tomorrow's Forecast &ndash;&gt;-->
+<!--                    <div class="mx-2">-->
+<!--                        <div class="sensor-card weather-card text-center p-3">-->
+<!--                            <h4 class="fw-bold mb-2">Tomorrow</h4>-->
+<!--                            <div class="weather-icon mb-3">-->
+<!--                                <img src="{getWeatherIconUrl(forecastWeatherCode)}" alt="Tomorrow Weather Icon" style="width:60px; height:60px;" />-->
+<!--                            </div>-->
+<!--                            <p class="fs-5 mb-1 text-warning">{outsideTempTomorrow}°C</p>-->
+<!--                            <p class="fs-6 text-secondary">Wind {outsideWindTomorrow} m/s</p>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
 
-                <div class="sensor-card text-center" style="height: auto !important;">
-                    <p class="fs-5 mb-2">
-                        <strong>Now:</strong> {outsideTempNow}°C, Wind {outsideWindNow} m/s
-                    </p>
-                    <p class="fs-5 mb-2">
-                        <strong>Tomorrow:</strong> {outsideTempTomorrow}°C, Wind {outsideWindTomorrow} m/s
-                    </p>
+<!--             Optional custom styles to enforce a max width and center the cards -->
+
+<!--            <div class="row g-4 mt-md-5 mt-4 mt-5 text-center">-->
+<!--                <div class="col-6 sensor-card" style="">-->
+
+<!--                </div>-->
+<!--                <div class="col-6 sensor-card" style="">-->
+
+<!--                </div>-->
+<!--            </div>-->
+            <h2 class="section-title mb-4 mt-md-5 mt-4">
+                Official Weather Forecast
+                <br>
+                <small class="text-muted" style="font-size: 0.7em;">
+                    Powered by the Open-Meteo API
+                </small>
+            </h2>
+
+            <div class="row row-cols-2 gx-3 gy-3 flex-grow-1 text-center justify-content-center">
+                <div class="col d-flex responsive-width">
+                    <div class="sensor-card text-center flex-fill">
+                        <h4 class="fw-bold mb-2">Now</h4>
+                        <div class="weather-icon mb-3">
+                            <img src="{getWeatherIconUrl(currentWeatherCode)}" alt="Current Weather Icon" style="width:60px; height:60px;" />
+                        </div>
+                        <p class="fs-5 mb-1 text-info">{outsideTempNow}°C</p>
+                        <p class="fs-6 text-secondary">Wind {outsideWindNow} m/s</p>
+                    </div>
                 </div>
+                <div class="col d-flex responsive-width">
+                    <div class="sensor-card text-center flex-fill">
+                        <h4 class="fw-bold mb-2">Tomorrow</h4>
+                        <div class="weather-icon mb-3">
+                            <img src="{getWeatherIconUrl(forecastWeatherCode)}" alt="Tomorrow Weather Icon" style="width:60px; height:60px;" />
+                        </div>
+                        <p class="fs-5 mb-1 text-warning">{outsideTempTomorrow}°C</p>
+                        <p class="fs-6 text-secondary">Wind {outsideWindTomorrow} m/s</p>
+                    </div>
+                </div>
+
             </div>
 
+
+
+
+
         </div>
+
 
         <!-- Charts -->
         <div class="mt-md-5 mt-4">
@@ -783,6 +889,53 @@
 </div>
 
 <style>
+    .responsive-width {
+        max-width: 25%;
+    }
+
+    @media (max-width: 768px) {
+        .responsive-width {
+            max-width: 100%;
+        }
+    }
+
+    .sensor-card.weather-card {
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    /* Keep sensor-card styling, then narrow them a bit for weather */
+    .weather-card {
+        min-width: 200px; /* or 280px, etc. */
+        margin: 0 auto;   /* center horizontally */
+    }
+
+    .outside-weather-card {
+        background: linear-gradient(135deg, rgba(255,255,255, 0.05) 0%, rgba(255,255,255, 0.02) 100%);
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    .weather-icon img {
+        filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+    }
+    @media (max-width: 767px) {
+        .outside-weather-container .col-md-6 {
+            margin-bottom: 1.5rem;
+        }
+    }
+
+    .last-watered {
+        font-size: 18px;
+        /* No animation on the entire element */
+    }
+    .water-time.updated {
+        animation: fadeIn 1s;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
     .spinning-icon {
         animation: spin 0.5s linear infinite;
         /* can help reduce flicker or pixelation in some cases */
@@ -956,6 +1109,7 @@
     }
     .sensor-card {
         /*min-height: 120px;*/
+        align-content: center;
         background: var(--card-bg);
         color: var(--card-text);
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
