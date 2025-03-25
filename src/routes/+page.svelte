@@ -191,6 +191,39 @@
     }
 
 
+    let waterControl = { water_mode: "auto", last_water_dispense: null };
+    let waterDispensedAgo = "Loading...";
+
+    async function fetchControlState() {
+        try {
+            const response = await fetch("https://ghapi.iomahdi.ir/api/get_control_state/");
+            const data = await response.json();
+            waterControl = data;
+            updateTimeDiff();
+        } catch (err) {
+            console.error("Error fetching control state", err);
+        }
+    }
+
+    function updateTimeDiff() {
+        if (!waterControl.last_water_dispense) {
+            waterDispensedAgo = "Never";
+            return;
+        }
+        const lastTime = new Date(waterControl.last_water_dispense);
+        const now = new Date();
+        const diffSec = Math.floor((now - lastTime) / 1000);
+        if (diffSec < 60) {
+            waterDispensedAgo = `${diffSec} seconds ago`;
+        } else if (diffSec < 3600) {
+            const min = Math.floor(diffSec / 60);
+            waterDispensedAgo = `${min} minutes ago`;
+        } else {
+            const hrs = Math.floor(diffSec / 3600);
+            waterDispensedAgo = `${hrs} hours ago`;
+        }
+    }
+
     async function handleWaterDispense() {
         // Indicate success style for 1 second without affecting waterMode.
         dispensing = true;
@@ -472,6 +505,7 @@
     onMount(() => {
         fetchData();
         fetchOutsideWeather();
+        fetchControlState();
 
         isMobile = window.innerWidth < 768;
 
@@ -489,7 +523,11 @@
 
         setInterval(() => {
             fetchData();
+            fetchControlState();
         }, 5000);
+        setInterval(() => {
+            fetchOutsideWeather();
+        }, 60000);
     });
 
 </script>
@@ -593,7 +631,10 @@
                     <!-- Fan Control Card -->
                     <div class="sensor-card text-center h-100">
                         <h3 class="text-center">
-                            <img src="/fan-blades-icon.svg" alt="Fan Icon" class="me-1 mb-1 {fanIsRunning ? 'spinning-icon' : ''}" style="max-width: 28px;">
+                            <img src="/ezgif-36180c5c8f53a3.gif" alt="Animated Fan Blowing Wind" class="{fanIsRunning ? '' : 'd-none'}" style="max-width: 30px; transform: scaleX(-1); margin-right: -16px; z-index: 1">
+
+                            <img src="/fan-blades-icon.svg" alt="Fan Icon" class="me-1 mb-1 {fanIsRunning ? 'spinning-icon' : ''}" style="max-width: 28px; z-index: 100">
+
                             <!-- Always show the icon; apply the 'spinning-icon' class conditionally -->
                             Fan Control
                         </h3>
@@ -627,6 +668,8 @@
                     <!-- Water Control -->
                     <div class="sensor-card text-center h-100">
                         <h3>Water Control</h3>
+                        <p>Last watered: {waterDispensedAgo}</p>
+
                         <div class="btn-group my-2">
                             <button class="p-0 align-items-center d-flex btn btn-outline-success {waterMode === 'auto' ? 'active' : ''}"
                                     on:click={() => updateWaterMode('auto')}
@@ -758,7 +801,7 @@
 
 <style>
     .spinning-icon {
-        animation: spin 2s linear infinite;
+        animation: spin 0.5s linear infinite;
         /* can help reduce flicker or pixelation in some cases */
         will-change: transform;
         backface-visibility: hidden;
