@@ -183,8 +183,8 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ water_mode: "+10ml" })
             });
-            // After dispensing, fetch the updated control state.
-            await updateWaterMode("auto");
+            // Instead of forcing auto mode, just refresh the control state
+            await fetchControlState();
         } catch (err) {
             console.error("❌ Error dispensing water:", err);
         }
@@ -890,14 +890,24 @@
 
 <style>
     .responsive-width {
-        max-width: 25%;
+        /* For large screens (above 1200px) */
+        max-width: 20%;
+    }
+
+    @media (max-width: 1200px) {
+        /* For medium screens (below 1200px) */
+        .responsive-width {
+            max-width: 30%;
+        }
     }
 
     @media (max-width: 768px) {
+        /* For small screens (below 768px) */
         .responsive-width {
             max-width: 100%;
         }
     }
+
 
     .sensor-card.weather-card {
         max-width: 400px;
