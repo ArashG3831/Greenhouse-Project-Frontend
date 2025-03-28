@@ -368,6 +368,7 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                devicePixelRatio: 4, // or even higher, e.g. 3, if your device supports it
                 elements: {
                     point: {
                         radius: 0,
