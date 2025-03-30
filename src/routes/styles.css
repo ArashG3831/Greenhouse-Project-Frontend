@@ -1,0 +1,451 @@
+.btn-custom-excel {
+    background-color: green; /* green background */
+    border: none;
+    color: #fff !important; /* white text */
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: background-color 0.2s ease;
+}
+
+.btn-custom-excel:hover {
+    background-color: #218838; /* darker green on hover */
+}
+
+.control-card-container {
+    position: relative;
+}
+
+.control-overlay {
+    position: absolute;
+    border-radius: 10px;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(128, 128, 128, 0.5); /* grey transparent overlay */
+    z-index: 10;
+}
+
+.inverted-svg {
+    -webkit-filter: invert(1);
+    filter: invert(1);
+}
+
+.powered-text {
+    font-size: 0.7em;
+    /* fallback color from Bootstrap text-muted if needed */
+    color: var(--bs-text-muted);
+}
+
+.light .powered-text {
+    color: #6c757d; /* white in light mode */
+}
+
+.dark .powered-text {
+    color: #d3d3d3; /* light grey in dark mode */
+}
+
+.responsive-width {
+    /* For large screens (above 1200px) */
+    max-width: 20%;
+}
+
+@media (max-width: 1200px) {
+    /* For medium screens (below 1200px) */
+    .responsive-width {
+        max-width: 30%;
+    }
+}
+
+@media (max-width: 768px) {
+    /* For small screens (below 768px) */
+    .responsive-width {
+        max-width: 100%;
+    }
+}
+
+
+.sensor-card.weather-card {
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+/* Keep sensor-card styling, then narrow them a bit for weather */
+.weather-card {
+    min-width: 200px; /* or 280px, etc. */
+    margin: 0 auto;   /* center horizontally */
+}
+
+.outside-weather-card {
+    background: linear-gradient(135deg, rgba(255,255,255, 0.05) 0%, rgba(255,255,255, 0.02) 100%);
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+.weather-icon img {
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+}
+@media (max-width: 767px) {
+    .outside-weather-container .col-md-6 {
+        margin-bottom: 1.5rem;
+    }
+}
+
+.last-watered {
+    font-size: 18px;
+    /* No animation on the entire element */
+}
+.water-time.updated {
+    animation: fadeIn 1s;
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+.spinning-icon {
+    animation: spin 0.5s linear infinite;
+    /* can help reduce flicker or pixelation in some cases */
+    will-change: transform;
+    backface-visibility: hidden;
+}
+
+@keyframes spin {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
+.water-btn.dispensing-active {
+    animation: waterFlash 2s ease;
+}
+
+@keyframes waterFlash {
+    0%   { background-color: #007a7a; }
+    50%  { background-color: #28a745; }
+    100% { background-color: #007a7a; }
+}
+
+.smart-info {
+    display: flex;
+    align-items: center;
+    /* Prevent the text from wrapping underneath the icon */
+    flex-wrap: wrap;
+    /* Optionally, add some margin or padding */
+    margin-left: 1rem;
+}
+
+/* Fade in animation similar to last-updated element */
+.fade-in {
+    animation: fadeIn 1s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+/* Hover: dark green background */
+.dark .dropdown-item:hover {
+    background-color: darkgreen !important;
+}
+:global(.dark) .dropdown-list {
+    background-color: #2e2e2e;
+}
+:global(.light) .dropdown-list {
+    background-color: #ffffff;
+}
+
+.custom-dropdown {
+    position: relative;
+    display: inline-block;
+    width: 160px;
+}
+
+.dropdown-toggle::after {
+    display: none;
+}
+.dropdown-toggle {
+    width: 100%;
+    padding: 8px 12px;
+    font-weight: bold;
+    border: 2px solid #2e2e2e;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #003d2e;
+    text-align: left;
+    cursor: pointer;
+
+    /* Remove any default arrow from OS or browser */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: none;
+}
+
+.dropdown-toggle:hover {
+    background-color: #f1f1f1;
+}
+
+.arrow {
+    float: right;
+}
+
+/* The dropdown list container */
+.dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    border: 2px solid #515151;
+    border-radius: 8px;
+    background-color: #ffffff;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    z-index: 999;
+
+    /* Ensures the li hover background doesn't exceed the container's rounded corners */
+    overflow: hidden;
+}
+
+
+.dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+.dropdown-item:hover {
+    background-color: #e0f3e0;
+}
+/* THEME VARIABLES */
+:global(.dark) {
+    --bg-color: #2e2e2e;
+    --text-color: #ffffff;
+    --header-bg: #1c1c1c;
+    --header-text: #ffffff;
+    --card-bg: #3a3a3a;
+    --card-text: #ffffff;
+    --button-bg: #555555;
+    --button-text: #ffffff;
+    --select-bg: #ffffff;
+    --select-text: #2e2e2e;
+    --chart-grid: rgba(255,255,255,0.2);
+    --chart-tick: #ffffff;
+}
+:global(.light) {
+    --bg-color: #f8f9fa;
+    --text-color: #003d2e;
+    --header-bg: #003d2e;  /* Dark green header in light mode */
+    --header-text: #ffffff;
+    --card-bg: #ffffff;
+    --card-text: #003d2e;
+    --button-bg: #007a7a;
+    --button-text: #ffffff;
+    --select-bg: #ffffff;
+    --select-text: #003d2e;
+    --chart-grid: rgba(0,0,0,0.1);
+    --chart-tick: #003d2e;
+}
+
+/* GLOBAL STYLES */
+body {
+    margin: 0;
+    padding: 0;
+}
+.dark, .light {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    min-height: 100vh;
+}
+.header {
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    font-size: 48px;
+    white-space: pre-line;
+    position: relative;
+}
+.header-subtitle {
+    font-size: 20px;
+    font-weight: normal;
+    opacity: 0.8;
+}
+.main-content {
+    padding: 0 15px;
+}
+.section-title, h3 {
+    color: var(--text-color);
+}
+.sensor-card {
+    /*min-height: 120px;*/
+    align-content: center;
+    background: var(--card-bg);
+    color: var(--card-text);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 16px;
+    border-radius: 10px;
+}
+
+/* Water Button styling & states */
+.water-btn {
+    font-size: 16px;
+    border: 1px solid #2f9595;
+    background: var(--card-bg);
+    color: #2f9595 !important;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.water-btn:hover {
+    background: #d3f9f9;
+}
+/*.water-btn:active {*/
+/*    background: #5be3e3;*/
+/*    color: #ffffff;*/
+/*}*/
+.dispensing-active {
+    background-color: #007a7a !important;
+    color: #ffffff !important;
+}
+.light .water-btn {
+    color: #007a7a;
+}
+
+/* Dark mode .btn-outline-success styling */
+.dark .btn-outline-success {
+    color: #ffffff;
+    border-color: #49d544;
+}
+.dark .btn-outline-success.active {
+    background-color: #378a34 !important;
+    color: #ffffff !important;
+}
+
+.last-updated {
+    font-size: 18px;
+    opacity: 1;
+}
+.last-updated.updated {
+    animation: fadeIn 1s;
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.btn-group button {
+    transition: all 0.2s ease-in-out;
+    width: 84px;
+    font-weight: bold;
+}
+.btn-outline-success.active {
+    background-color: #208120 !important;
+    color: #ffffff !important;
+    border: none;
+}
+.btn-outline-primary.active {
+    background-color: #2963c3 !important;
+    color: #ffffff !important;
+    border: none;
+}
+.btn-outline-danger.active {
+    background-color: #ae2d2d !important;
+    color: #ffffff !important;
+    border: none;
+}
+.btn-outline-info.active {
+    background-color: #007a7a !important;
+    color: #ffffff !important;
+    border: none;
+}
+.chart-container {
+    background: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    width: 100%;
+    height: 300px;
+}
+.select-container {
+    position: relative;
+    display: inline-block;
+}
+.select-container select {
+    background-color: var(--select-bg);
+    border: 2px solid #003d2e;
+    color: var(--select-text);
+    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 8px;
+    appearance: none;
+    cursor: pointer;
+    width: 180px;
+}
+.select-container::after {
+    content: "▼";
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    color: var(--select-text);
+    font-size: 14px;
+    pointer-events: none;
+}
+.select-container select:hover,
+.select-container select:focus {
+    background-color: #f1f1f1;
+    border-color: #145214;
+}
+
+.footer {
+    color: var(--header-text);
+    background-color: var(--header-bg);
+    margin-bottom: 0 !important;
+}
+.team-title {
+    font-size: 36px;
+}
+.team-members div {
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+.team-rights {
+    font-size: 16px;
+}
+
+/* Desktop theme toggle: top-right corner */
+.theme-toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 1rem;
+    padding: 10px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    border: none;
+    background-color: #007a7a;
+    color: #ffffff;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.theme-toggle:hover {
+    background-color: #009999;
+}
+.theme-toggle-mobile {
+    border-radius: 20px;
+    font-weight: bold;
+    border: none;
+    background-color: #007a7a;
+    color: #ffffff;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.theme-toggle-mobile:hover {
+    background-color: #009999;
+}
+@media (max-width: 767px) {
+    .mobile-44px {
+        font-size: 44px;
+    }
+    .theme-toggle {
+        display: none !important;
+    }
+}

@@ -1023,7 +1023,7 @@
 
         <!-- Charts -->
         <div class="mt-md-5 mt-4">
-            <h2 class="section-title">Sensor Data Trends</h2>
+            <h2 class="section-title mb-3">Sensor Data Trends</h2>
             <!-- Container that holds the dropdown + icon + text -->
             <div class="d-flex align-items-center" style="flex-wrap: nowrap; width: 100%;">
                 <!-- Dropdown (fixed size) -->
@@ -1088,12 +1088,13 @@
                 </div>
             </div>
 
-            <div class="text-center mt-md-4 mt-2">
-                <button class="py-2 px-3 align-items-center btn btn-custom-excel" on:click={downloadExcel}>
-                    <img class="me-1" src="/excel.webp" alt="smart icon" width="32" height="32"/>
+            <div class="text-center mt-md-5 mt-4">
+                <button class="btn-custom-excel" on:click={downloadExcel}>
+                    <img class="excel-icon" src="/excel.webp" alt="Excel icon" />
                     Download Data as Excel
                 </button>
             </div>
+
 
 
 
@@ -1101,7 +1102,7 @@
     </div>
 
     <!-- Footer -->
-    <footer class="footer p-md-5 p-4 mb-5 mt-md-5 mt-3" style="padding-bottom: 4px !important">
+    <footer class="footer p-md-5 p-4 mb-5 mt-md-5 mt-4" style="padding-bottom: 4px !important">
         <div class="fw-semibold mb-4 team-title">Team Members</div>
         <div class="ms-3 team-members">
             <div>Arash Ganjei</div>
@@ -1115,19 +1116,40 @@
 </div>
 
 <style>
+    /* In your <style> block or external stylesheet: */
+
+    /* Set up the button to use flex so icon + text line up well */
     .btn-custom-excel {
-        background-color: green; /* green background */
+        display: inline-flex;         /* keep it only as wide as needed */
+        align-items: center;          /* center icon and text vertically */
+        justify-content: center;      /* optional if you want the text centered */
+
+        background-color: #217346;    /* more Excel-like green */
+        color: #fff;
         border: none;
-        color: #fff !important; /* white text */
-        padding: 0.5rem 1rem;
         border-radius: 6px;
+        padding: 0.5rem 1rem;
         font-size: 1rem;
+        font-weight: 500;             /* slightly bolder text */
+        cursor: pointer;
         transition: background-color 0.2s ease;
+
+        /* Optionally give it a slight shadow: */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
 
+    /* Darker hover state */
     .btn-custom-excel:hover {
-        background-color: #218838; /* darker green on hover */
+        background-color: #185c33;   /* a bit darker than #217346 */
     }
+
+    /* Icon style */
+    .excel-icon {
+        width: 32px;
+        height: 32px;
+        margin-right: 0.6rem; /* spacing between icon and text */
+    }
+
 
     .control-card-container {
         position: relative;
