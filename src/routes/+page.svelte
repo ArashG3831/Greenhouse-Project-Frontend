@@ -2,6 +2,9 @@
     import { onMount  } from "svelte";
     import Chart from "chart.js/auto";
     import 'bootstrap/dist/css/bootstrap.min.css';
+    import pkg from 'file-saver';
+    const { saveAs } = pkg;
+    import * as XLSX from 'xlsx';
 
     // ----- THEME TOGGLING SETUP -----
     let theme = "light";  // default theme set to Light Mode
@@ -14,6 +17,27 @@
         const value = "; " + document.cookie;
         const parts = value.split("; " + name + "=");
         if (parts.length === 2) return decodeURIComponent(parts.pop().split(";").shift());
+    }
+
+
+    function downloadExcel() {
+        // Use your sensorData (which should contain the filtered data per selectedRange)
+        // Optionally, you can adjust/format the data before exporting.
+        const dataToDownload = sensorData;
+
+        // Convert JSON array to a worksheet
+        const worksheet = XLSX.utils.json_to_sheet(dataToDownload);
+
+        // Create a new workbook and append the worksheet
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+
+        // Write workbook to binary array
+        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+
+        // Create a Blob and trigger the file download
+        const blob = new Blob([wbout], { type: "application/octet-stream" });
+        saveAs(blob, `chart_data_${selectedRange}.xlsx`);
     }
 
     function toggleTheme() {
@@ -913,6 +937,13 @@
                     </div>
                 </div>
             </div>
+
+            <div class="download-container" style="margin-top: 1rem;">
+                <button class="btn btn-primary" on:click={downloadExcel}>
+                    Download Data as Excel
+                </button>
+            </div>
+
         </div>
     </div>
 
