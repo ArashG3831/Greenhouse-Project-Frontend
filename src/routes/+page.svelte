@@ -2,9 +2,6 @@
     import { onMount  } from "svelte";
     import Chart from "chart.js/auto";
     import 'bootstrap/dist/css/bootstrap.min.css';
-    import pkg from 'file-saver';
-    const { saveAs } = pkg;
-    import * as XLSX from 'xlsx';
 
     // ----- THEME TOGGLING SETUP -----
     let theme = "light";  // default theme set to Light Mode
@@ -19,26 +16,179 @@
         if (parts.length === 2) return decodeURIComponent(parts.pop().split(";").shift());
     }
 
+    import ExcelJS from 'exceljs';
+    import pkg from 'file-saver';
+    const { saveAs } = pkg;
 
-    function downloadExcel() {
-        // Use your sensorData (which should contain the filtered data per selectedRange)
-        // Optionally, you can adjust/format the data before exporting.
-        const dataToDownload = sensorData;
 
-        // Convert JSON array to a worksheet
-        const worksheet = XLSX.utils.json_to_sheet(dataToDownload);
+    const NUMERIC_COLUMNS = [
+        "temperature",
+        "humidity",
+        "oxygen_level",
+        "co2_level",
+        "light_illumination"
+    ];
 
-        // Create a new workbook and append the worksheet
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+    // Original name => user-friendly header text
+    const COLUMN_LABELS = {
+        date_time:           "Date/Time",
+        group_id:            "ID",
+        temperature:         "Temperature (°C)",
+        humidity:            "Humidity (%)",
+        oxygen_level:        "O₂ (%)",
+        co2_level:           "CO₂ (ppm)",
+        light_illumination:  "Light (lx)"
+    };
 
-        // Write workbook to binary array
-        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    ////////////////////////////////////////////////////////////////////////////////
+    // 2) Convert your sensorData to a new array of rows
+    //    Skips 'timestamp'/'formattedTime' and merges them into 'date_time' column
+    ////////////////////////////////////////////////////////////////////////////////
+    function buildExcelRows(data) {
+        return data.map(obj => {
+            const dateTimeStr = new Date(obj.timestamp).toLocaleString("en-US", {
+                year:  "numeric",
+                month: "2-digit",
+                day:   "2-digit",
+                hour:  "2-digit",
+                minute:"2-digit",
+                hour12: true
+            });
 
-        // Create a Blob and trigger the file download
-        const blob = new Blob([wbout], { type: "application/octet-stream" });
-        saveAs(blob, `chart_data_${selectedRange}.xlsx`);
+            return {
+                date_time:          dateTimeStr,
+                group_id:           obj.group_id,
+                temperature:        obj.temperature,
+                humidity:           obj.humidity,
+                oxygen_level:       obj.oxygen_level,
+                co2_level:          obj.co2_level,
+                light_illumination: obj.light_illumination
+            };
+        });
     }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // 3) Build + style the Excel workbook, applying filters and column rename
+    ////////////////////////////////////////////////////////////////////////////////
+    async function downloadExcel() {
+        if (!sensorData || !sensorData.length) {
+            console.error("No data available to download.");
+            return;
+        }
+
+        const excelRows = buildExcelRows(sensorData);
+
+        // Collect the final property names in the order we want them
+        // e.g. ["date_time", "group_id", "temperature", ...]
+        const finalProps = Object.keys(excelRows[0]);
+
+        // Map those to user-friendly labels
+        const headers = finalProps.map(prop => COLUMN_LABELS[prop] ?? prop);
+        const colCount = headers.length;
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Data");
+
+        // --- Title row (row 1) ---
+        const titleText = "Greenhouse Environmental Data Overview";
+        const titleRowValues = new Array(colCount).fill("");
+        titleRowValues[0] = titleText;
+        const titleRow = worksheet.addRow(titleRowValues);
+
+        worksheet.mergeCells(1, 1, 1, colCount);
+
+        const titleCell = worksheet.getCell("A1");
+        titleCell.font = {
+            bold: true,
+            size: 18,
+            color: { argb: "FFFFFFFF" } // White text
+        };
+        titleCell.alignment = { horizontal: "center", vertical: "middle" };
+        titleCell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FF2F5597" } // Dark blue background
+        };
+
+        // --- Header row (row 2) ---
+        const headerRow = worksheet.addRow(headers);
+        headerRow.eachCell((cell) => {
+            cell.font = { bold: true, size: 14, color: { argb: "FFFFFFFF" } };
+            cell.alignment = { horizontal: "center", vertical: "middle" };
+            cell.fill = {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: "FF4F81BD" } // Lighter dark-blue fill
+            };
+        });
+
+        // --- Data rows (starting row 3) ---
+        const reversedData = excelRows.slice().reverse();
+        reversedData.forEach((rowObj) => {
+            const rowValues = finalProps.map(prop => rowObj[prop]);
+            const row = worksheet.addRow(rowValues);
+            row.eachCell(cell => {
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            });
+        });
+
+        // Row striping for data rows
+        worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+            // Skip row 1 (title) + row 2 (headers). Start at row 3
+            if (rowNumber >= 3 && rowNumber % 2 === 0) {
+                row.eachCell(cell => {
+                    cell.fill = {
+                        type: "pattern",
+                        pattern: "solid",
+                        fgColor: { argb: "FFCCECFF" } // pastel blue
+                    };
+                });
+            }
+        });
+
+        // Numeric formatting
+        NUMERIC_COLUMNS.forEach(colName => {
+            const colIndex = finalProps.indexOf(colName);
+            if (colIndex >= 0) {
+                worksheet.getColumn(colIndex + 1).numFmt = "0.00";
+            }
+        });
+
+        // Auto-fit columns
+        const MAX_WIDTH = 50;
+        const EXTRA_PADDING = 5;
+        finalProps.forEach((prop, colIndex) => {
+            let maxLength = headers[colIndex].length;
+            excelRows.forEach(row => {
+                const val = row[prop] ? row[prop].toString() : "";
+                maxLength = Math.max(maxLength, val.length);
+            });
+            worksheet.getColumn(colIndex + 1).width = Math.min(MAX_WIDTH, maxLength + EXTRA_PADDING);
+        });
+
+        // 4) Turn on AutoFilter on the header row (row 2)
+        worksheet.autoFilter = {
+            from: { row: 2, column: 1 },
+            to:   { row: 2, column: colCount }
+        };
+
+        // 5) Generate + download
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: "application/octet-stream" });
+        const fileNameMapping = {
+            "1h": "Greenhouse Data Last Hour.xlsx",
+            "24h": "Greenhouse Data Last 24 Hours.xlsx",
+            "7d": "Greenhouse Data Last 7 Days.xlsx",
+            "30d": "Greenhouse Data Last 30 Days.xlsx",
+            "all": "Greenhouse Data All.xlsx"
+        };
+        const fileName = fileNameMapping[selectedRange] || `Greenhouse Data ${selectedRange}.xlsx`;
+        saveAs(blob, fileName);
+    }
+
+
+
+
 
     function toggleTheme() {
         theme = theme === "dark" ? "light" : "dark";
@@ -938,11 +1088,14 @@
                 </div>
             </div>
 
-            <div class="download-container" style="margin-top: 1rem;">
-                <button class="btn btn-primary" on:click={downloadExcel}>
+            <div class="text-center mt-md-4 mt-2">
+                <button class="py-2 px-3 align-items-center btn btn-custom-excel" on:click={downloadExcel}>
+                    <img class="me-1" src="/excel.webp" alt="smart icon" width="32" height="32"/>
                     Download Data as Excel
                 </button>
             </div>
+
+
 
         </div>
     </div>
@@ -962,6 +1115,19 @@
 </div>
 
 <style>
+    .btn-custom-excel {
+        background-color: green; /* green background */
+        border: none;
+        color: #fff !important; /* white text */
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 1rem;
+        transition: background-color 0.2s ease;
+    }
+
+    .btn-custom-excel:hover {
+        background-color: #218838; /* darker green on hover */
+    }
 
     .control-card-container {
         position: relative;
