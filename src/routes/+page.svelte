@@ -56,8 +56,8 @@
             });
 
             return {
-                date_time:          dateTimeStr,
                 group_id:           obj.group_id,
+                date_time:          dateTimeStr,
                 temperature:        obj.temperature,
                 humidity:           obj.humidity,
                 oxygen_level:       obj.oxygen_level,
