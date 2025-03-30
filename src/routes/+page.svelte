@@ -1147,8 +1147,19 @@
     .excel-icon {
         width: 32px;
         height: 32px;
-        margin-right: 0.6rem; /* spacing between icon and text */
+        margin-right: 0.6rem;
+
+        /* Smooth transition for hover effect */
+        transition: transform 0.2s, filter 0.2s;
     }
+
+    /* When hovering the button, enlarge and brighten the icon a bit */
+    .btn-custom-excel:hover .excel-icon {
+        /*transform: scale(1.1);            !* slight scale‐up *!*/
+        filter: brightness(1.2);          /* makes it pop more */
+        /* or you could add a drop shadow: filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); */
+    }
+
 
 
     .control-card-container {
