@@ -31,8 +31,8 @@
 
     // Original name => user-friendly header text
     const COLUMN_LABELS = {
-        date_time:           "Date/Time",
         group_id:            "ID",
+        date_time:           "Date/Time",
         temperature:         "Temperature (°C)",
         humidity:            "Humidity (%)",
         oxygen_level:        "O₂ (%)",
