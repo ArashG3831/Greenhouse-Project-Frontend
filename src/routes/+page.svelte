@@ -146,6 +146,11 @@
     let waterDispenseActive;
 
     async function updateFanMode(mode) {
+        if (!isLoggedIn) {
+            console.error("Access Denied: You are not authenticated to change fan mode.");
+            // For normal users, clicking does nothing (state remains unchanged)
+            return;
+        }
         try {
             const response = await fetch(ip + "/api/set_control_state/", {
                 method: "POST",
@@ -161,6 +166,11 @@
     }
 
     async function updateWaterMode(mode) {
+        if (!isLoggedIn) {
+            console.error("Access Denied: You are not authenticated to change water mode.");
+            // Normal users cannot update the state via this function.
+            return;
+        }
         try {
             const response = await fetch(ip + "/api/set_control_state/", {
                 method: "POST",
@@ -177,6 +187,11 @@
     }
 
     async function handleWaterDispense() {
+        if (!isLoggedIn) {
+            console.error("Access Denied: You are not authenticated to dispense water.");
+            // Normal users will see no change when clicking.
+            return;
+        }
         try {
             await fetch(ip + "/api/set_control_state/", {
                 method: "POST",
@@ -225,6 +240,10 @@
             const response = await fetch("https://ghapi.iomahdi.ir/api/get_control_state/");
             const data = await response.json();
             waterControl = data;
+            waterMode = data.water_mode;
+            // Assume the backend returns fan control state as well:
+            fanMode = data.fan_mode;
+            fanIsRunning = data.fan_is_running;
             updateTimeDiff();
         } catch (err) {
             console.error("Error fetching control state", err);
@@ -525,7 +544,26 @@
         }
     }
 
+    // Set your hard-to-guess secret key here
+    const secretKey = "9975afad-dea0-477e-a5a3-6586d8da3f8a"; // Replace with your chosen token
+    let isLoggedIn;
+    // Function to get the stored token from localStorage
+    function getStoredToken() {
+        return localStorage.getItem('loginToken');
+    }
+
     onMount(() => {
+
+        const token = getStoredToken();
+        if (token && token === secretKey) {
+            console.log("Browser recognized and token valid. You are authenticated.");
+            isLoggedIn = true
+        } else {
+            console.error("No valid token found in localStorage. Access denied.");
+            isLoggedIn = false
+            // Optionally, add further handling here (like redirecting or disabling functionality)
+        }
+
         fetchData();
         fetchOutsideWeather();
         fetchControlState();
@@ -661,15 +699,9 @@
                     </div>
 
                     <!-- Fan Control Card -->
-                    <div class="sensor-card text-center mb-3">
+                    <div class="sensor-card text-center mb-3 control-card-container">
                         <h3 class="text-center">
-                            <!-- Fan icon that spins -->
-                            <img
-                                    src="/fan-blades-icon.svg"
-                                    alt="Fan Icon"
-                                    class="me-1 mb-1 {fanIsRunning ? 'spinning-icon' : ''} {theme === 'dark' ? 'inverted-svg' : ''}"
-                                    style="max-width: 28px;">
-
+                            <img src="/fan-blades-icon.svg" alt="Fan Icon" class="me-1 mb-1 {fanIsRunning ? 'spinning-icon' : ''} {theme === 'dark' ? 'inverted-svg' : ''}" style="max-width: 28px;">
                             Fan Control
                         </h3>
                         <div class="btn-group my-2">
@@ -694,10 +726,14 @@
                                 Off
                             </button>
                         </div>
+                        {#if !isLoggedIn}
+                            <div class="control-overlay"></div>
+                        {/if}
                     </div>
 
+
                     <!-- Water Control Card -->
-                    <div class="sensor-card text-center">
+                    <div class="sensor-card text-center control-card-container">
                         <h3>Water Control</h3>
                         <p class="last-watered mb-2">
                             Last watered:
@@ -716,8 +752,7 @@
                             </button>
                             <button class="p-0 water-btn btn btn-outline-info"
                                     on:click={handleWaterDispense}
-                                    style="width: 84px; height: 38px"
-                                    class:dispensing-active={waterDispenseActive}>
+                                    style="width: 84px; height: 38px">
                                 +10ml
                             </button>
                             <button class="btn btn-outline-danger {waterMode === 'off' ? 'active' : ''}"
@@ -726,7 +761,11 @@
                                 Off
                             </button>
                         </div>
+                        {#if !isLoggedIn}
+                            <div class="control-overlay"></div>
+                        {/if}
                     </div>
+
                 </div>
             </div>
 
@@ -892,6 +931,22 @@
 </div>
 
 <style>
+
+    .control-card-container {
+        position: relative;
+    }
+
+    .control-overlay {
+        position: absolute;
+        border-radius: 10px;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(128, 128, 128, 0.5); /* grey transparent overlay */
+        z-index: 10;
+    }
+
     .inverted-svg {
         -webkit-filter: invert(1);
         filter: invert(1);
