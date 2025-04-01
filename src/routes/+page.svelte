@@ -310,7 +310,7 @@
             console.warn("⚠️ No sensor data for Live Sensors");
             return;
         }
-        let latestData = sensorData[sensorData.length - 1];
+        let latestData = sensorData[0];
         latestTemperature = latestData?.temperature?.toFixed(2) + "°C" || "N/A";
         latestHumidity = latestData?.humidity?.toFixed(2) + "%" || "N/A";
         latestOxygen = latestData?.oxygen_level?.toFixed(2) + "%" || "N/A";
