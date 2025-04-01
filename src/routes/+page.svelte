@@ -769,6 +769,7 @@
 </script>
 
 <svelte:head>
+    <title>sadssa.ir</title>  <!-- <- Change this line -->
     <link rel="preload" as="image" href="/smart.png" />
     <link rel="preload" as="image" href="/smart2.png" />
 </svelte:head>
