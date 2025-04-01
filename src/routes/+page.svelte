@@ -270,8 +270,9 @@
             updateLiveSensorValues();
 
             // Update "Last Updated"
-            sensorData.sort((a, b) => b.group_id - a.group_id); // Ascending order
-            let latestData = sensorData[sensorData.length - 1];
+            sensorData.sort((a, b) => b.group_id - a.group_id); // Descending order
+            let latestData = sensorData[0];
+
             let newTimestamp = new Date(latestData.timestamp).toISOString();
             if (newTimestamp !== lastValidTimestamp) {
                 lastValidTimestamp = newTimestamp;
