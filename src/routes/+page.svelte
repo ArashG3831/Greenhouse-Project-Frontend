@@ -411,7 +411,7 @@
     // Example function to fetch control state (ensure waterControl gets updated)
     async function fetchControlState() {
         try {
-            const response = await fetch("https://ghapi.iomahdi.ir/api/get_control_state/");
+            const response = await fetch(ip + "/api/get_control_state/");
             const data = await response.json();
             waterControl = data;
             waterMode = data.water_mode;
