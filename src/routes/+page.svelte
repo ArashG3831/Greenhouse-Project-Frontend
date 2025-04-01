@@ -424,6 +424,7 @@
         }
     }
 
+
     function filterDataForChart() {
         let step = 1;
         if (selectedRange === "1h") {
