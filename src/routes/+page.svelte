@@ -270,12 +270,15 @@
             updateLiveSensorValues();
 
             // Update "Last Updated"
-            sensorData.sort((a, b) => a.group_id - b.group_id); // Ascending order
+            sensorData.sort((a, b) => b.group_id - a.group_id); // Ascending order
             let latestData = sensorData[sensorData.length - 1];
             let newTimestamp = new Date(latestData.timestamp).toISOString();
             if (newTimestamp !== lastValidTimestamp) {
                 lastValidTimestamp = newTimestamp;
-                lastUpdated = new Date(latestData.timestamp).toLocaleString();
+                lastUpdated = new Date(latestData.timestamp).toLocaleString('fa-IR', {
+                    timeZone: 'Asia/Tehran',
+                    hour12: false
+                });
 
                 if (lastUpdatedElement) {
                     lastUpdatedElement.classList.remove("updated");
