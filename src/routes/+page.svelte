@@ -270,12 +270,16 @@
             updateLiveSensorValues();
 
             // Update "Last Updated"
-
             let latestData = sensorData[sensorData.length - 1];
-            let newTimestamp = new Date(latestData.timestamp).toISOString();
+            // Convert "YYYY-MM-DD HH:MM:SS" to ISO format with Tehran offset ("T" and "+03:30")
+            const tehranTimestampStr = latestData.timestamp.replace(' ', 'T') + '+03:30';
+            let newTimestamp = new Date(tehranTimestampStr).toISOString();
             if (newTimestamp !== lastValidTimestamp) {
                 lastValidTimestamp = newTimestamp;
-                lastUpdated = new Date(latestData.timestamp).toLocaleString();
+                lastUpdated = new Date(tehranTimestampStr).toLocaleString('fa-IR', {
+                    timeZone: 'Asia/Tehran',
+                    hour12: false
+                });
 
                 if (lastUpdatedElement) {
                     lastUpdatedElement.classList.remove("updated");
@@ -283,6 +287,7 @@
                     lastUpdatedElement.classList.add("updated");
                 }
             }
+
 
             formatTimestamps();
             filterDataForChart();
