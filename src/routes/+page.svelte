@@ -270,16 +270,12 @@
             updateLiveSensorValues();
 
             // Update "Last Updated"
-            sensorData.sort((a, b) => b.group_id - a.group_id); // Descending order
-            let latestData = sensorData[0];
 
+            let latestData = sensorData[sensorData.length - 1];
             let newTimestamp = new Date(latestData.timestamp).toISOString();
             if (newTimestamp !== lastValidTimestamp) {
                 lastValidTimestamp = newTimestamp;
-                lastUpdated = new Date(latestData.timestamp).toLocaleString('fa-IR', {
-                    timeZone: 'Asia/Tehran',
-                    hour12: false
-                });
+                lastUpdated = new Date(latestData.timestamp).toLocaleString();
 
                 if (lastUpdatedElement) {
                     lastUpdatedElement.classList.remove("updated");
@@ -310,7 +306,7 @@
             console.warn("⚠️ No sensor data for Live Sensors");
             return;
         }
-        let latestData = sensorData[0];
+        let latestData = sensorData[sensorData.length - 1];
         latestTemperature = latestData?.temperature?.toFixed(2) + "°C" || "N/A";
         latestHumidity = latestData?.humidity?.toFixed(2) + "%" || "N/A";
         latestOxygen = latestData?.oxygen_level?.toFixed(2) + "%" || "N/A";
