@@ -11,13 +11,13 @@
 		"check:watch": "svelte-check --tsconfig ./jsconfig.json --watch"
 	},
 	"devDependencies": {
+		"@sveltejs/adapter-static": "^3.0.8",
 		"@sveltejs/kit": "^2.20.2",
-		"@sveltejs/adapter-auto": "^3.3.1",
 		"@sveltejs/vite-plugin-svelte": "^5.0.3",
-		"svelte": "^5.0.0-next.88",
-		"vite": "^6.2.4",
+		"svelte": "^4.2.12",
+		"svelte-check": "^3.6.6",
 		"typescript": "^5.3.3",
-		"svelte-check": "^3.6.6"
+		"vite": "^6.2.4"
 	},
 	"dependencies": {
 		"bootstrap": "^5.3.3",
