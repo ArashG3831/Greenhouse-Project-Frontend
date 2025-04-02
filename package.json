@@ -11,12 +11,12 @@
 		"check:watch": "svelte-check --tsconfig ./jsconfig.json --watch"
 	},
 	"devDependencies": {
-		"@sveltejs/kit": "2.0.3",
-		"@sveltejs/adapter-auto": "3.0.0",
-		"@sveltejs/vite-plugin-svelte": "3.0.0",
-		"svelte": "5.0.0-next.61",
-		"vite": "5.1.4",
-		"typescript": "^5.0.0",
+		"@sveltejs/kit": "^2.20.2",
+		"@sveltejs/adapter-auto": "^3.0.0",
+		"@sveltejs/vite-plugin-svelte": "^5.0.2",
+		"svelte": "^5.0.0-next.88",
+		"vite": "^5.2.0",
+		"typescript": "^5.3.3",
 		"svelte-check": "^3.6.6"
 	},
 	"dependencies": {
