@@ -271,20 +271,31 @@
 
             // Update "Last Updated"
             let latestData = sensorData[sensorData.length - 1];
-            // Convert "YYYY-MM-DD HH:MM:SS" to ISO format with Tehran offset ("T" and "+03:30")
-            const tehranTimestampStr = latestData.timestamp.replace(' ', 'T') + '+03:30';
-            let newTimestamp = new Date(tehranTimestampStr).toISOString();
-            if (newTimestamp !== lastValidTimestamp) {
-                lastValidTimestamp = newTimestamp;
-                lastUpdated = new Date(tehranTimestampStr).toLocaleString('fa-IR', {
-                    timeZone: 'Asia/Tehran',
-                    hour12: false
-                });
+            if (!latestData || !latestData.timestamp) {
+                console.error("Latest data does not have a valid timestamp:", latestData);
+            } else {
+                // Convert the timestamp from "YYYY-MM-DD HH:MM:SS" to "YYYY-MM-DDTHH:MM:SS+03:30"
+                const tehranTimestampStr = latestData.timestamp.trim().replace(' ', 'T') + '+03:30';
+                const parsedDate = new Date(tehranTimestampStr);
 
-                if (lastUpdatedElement) {
-                    lastUpdatedElement.classList.remove("updated");
-                    void lastUpdatedElement.offsetWidth; // force reflow
-                    lastUpdatedElement.classList.add("updated");
+                if (isNaN(parsedDate)) {
+                    console.error("Parsed date is invalid:", tehranTimestampStr);
+                } else {
+                    let newTimestamp = parsedDate.toISOString();
+                    if (newTimestamp !== lastValidTimestamp) {
+                        lastValidTimestamp = newTimestamp;
+                        // Format the date in Tehran time
+                        lastUpdated = parsedDate.toLocaleString('fa-IR', {
+                            timeZone: 'Asia/Tehran',
+                            hour12: false
+                        });
+
+                        if (lastUpdatedElement) {
+                            lastUpdatedElement.classList.remove("updated");
+                            void lastUpdatedElement.offsetWidth; // force reflow
+                            lastUpdatedElement.classList.add("updated");
+                        }
+                    }
                 }
             }
 
