@@ -8,14 +8,10 @@ RUN npm install --legacy-peer-deps
 
 COPY . .
 
-# Optional: force clean build
-RUN rm -rf .svelte-kit build
+# This is the only command that works with SvelteKit 2+
+RUN npm run build
 
-# Build the SvelteKit app
-RUN npx svelte-kit build
-
-# -----------------------------------------------------
-# Serve the static build (from adapter-static output)
+# Serve the static build
 FROM node:22.14.0
 
 WORKDIR /app
