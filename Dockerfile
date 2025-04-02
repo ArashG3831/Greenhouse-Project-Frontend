@@ -6,19 +6,18 @@ COPY package.json package-lock.json ./
 RUN npm install --legacy-peer-deps
 
 COPY . .
-
 RUN npm run build
 
-# ---------
+# ---
 
 FROM node:22.14.0
 
 WORKDIR /app
 
-RUN npm install -g serve
+COPY --from=builder /app ./
 
-COPY --from=builder /app/build ./build
+RUN npm install --omit=dev --legacy-peer-deps
 
-EXPOSE 5173
+EXPOSE 3000
 
-CMD ["serve", "build", "--listen", "5173"]
+CMD ["node", "build"]

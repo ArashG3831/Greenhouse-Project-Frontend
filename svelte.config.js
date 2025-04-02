@@ -1,10 +1,9 @@
-import adapter from '@sveltejs/adapter-static';
+import adapter from '@sveltejs/adapter-node';
 
 const config = {
   kit: {
-    adapter: adapter({
-      fallback: 'index.html'
-    })
+    adapter: adapter(),
+    ssr: true  // this is default, but you can add it explicitly
   }
 };
 
