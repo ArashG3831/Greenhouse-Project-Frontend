@@ -1,10 +1,11 @@
 import adapter from '@sveltejs/adapter-static';
 
-export default {
+const config = {
 	kit: {
-		adapter: adapter(),
-		alias: {
-			$components: 'src/components'
-		}
+		adapter: adapter({
+			fallback: 'index.html'
+		}),
 	}
 };
+
+export default config;
