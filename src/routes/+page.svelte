@@ -299,7 +299,7 @@
                     if (newTimestamp !== lastValidTimestamp) {
                         lastValidTimestamp = newTimestamp;
                         // Format the date in Tehran time using the 'fa-IR' locale
-                        lastUpdated = parsedDate.toLocaleString('fa-IR', {
+                        lastUpdated = parsedDate.toLocaleString('en-US', {
                             timeZone: 'Asia/Tehran',
                             hour12: false
                         });
