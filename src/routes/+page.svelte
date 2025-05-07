@@ -270,7 +270,8 @@
             updateLiveSensorValues();
 
             // Update "Last Updated"
-            let rawTimestamp = response.latest_timestamp;  // Use backend field directly
+            let latestData = sensorData[sensorData.length - 1];
+            let rawTimestamp = latestData.timestamp;
             if (!latestData || !latestData.timestamp) {
                 console.error("Latest data does not have a valid timestamp:", latestData);
             } else {
