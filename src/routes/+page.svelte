@@ -275,13 +275,8 @@
             updateLiveSensorValues();
 
             // Update "Last Updated"
-            let latestData = sensorData[sensorData.length - 1];
-            if (!latestData || !latestData.timestamp) {
-                console.error("Latest data does not have a valid timestamp:", latestData);
-                return;
-            }
+            let rawTimestamp = sensorJson.latest_timestamp;
 
-            let rawTimestamp = latestData.timestamp;
 
             try {
                 const parsedUtcDate = new Date(rawTimestamp); // Keep the Z, don't touch it
