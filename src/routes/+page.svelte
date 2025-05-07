@@ -281,39 +281,34 @@
                 return;
             }
 
-            let rawTimestamp = latestData.timestamp.trim();
-            let tehranTimestampStr = "";
+            let rawTimestamp = latestData.timestamp;
 
-            // Continue with your existing timestamp formatting code...
-            if (rawTimestamp.includes("T")) {
-                if (rawTimestamp.endsWith("Z")) {
-                    tehranTimestampStr = rawTimestamp.slice(0, -1) + "+03:30";
-                } else {
-                    tehranTimestampStr = rawTimestamp;
+            try {
+                const parsedUtcDate = new Date(rawTimestamp); // Keep the Z, don't touch it
+                const formatter = new Intl.DateTimeFormat("en-US", {
+                    timeZone: "Asia/Tehran",
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false
+                });
+
+                lastUpdated = formatter.format(parsedUtcDate);
+
+                if (lastUpdatedElement) {
+                    lastUpdatedElement.classList.remove("updated");
+                    void lastUpdatedElement.offsetWidth;
+                    lastUpdatedElement.classList.add("updated");
                 }
-            } else {
-                tehranTimestampStr = rawTimestamp.replace(' ', 'T') + "+03:30";
+
+                lastValidTimestamp = parsedUtcDate.toISOString(); // store UTC version
+            } catch (err) {
+                console.error("Failed to format timestamp:", rawTimestamp, err);
             }
 
-            const parsedDate = new Date(tehranTimestampStr);
-            if (isNaN(parsedDate)) {
-                console.error("Parsed date is invalid:", tehranTimestampStr);
-            } else {
-                let newTimestamp = parsedDate.toISOString();
-                if (newTimestamp !== lastValidTimestamp) {
-                    lastValidTimestamp = newTimestamp;
-                    lastUpdated = parsedDate.toLocaleString('en-US', {
-                        timeZone: 'Asia/Tehran',
-                        hour12: false
-                    });
-
-                    if (lastUpdatedElement) {
-                        lastUpdatedElement.classList.remove("updated");
-                        void lastUpdatedElement.offsetWidth;
-                        lastUpdatedElement.classList.add("updated");
-                    }
-                }
-            }
 
 
 
@@ -476,27 +471,49 @@
     }
 
     function formatTimestamps() {
+        const formatterTime = new Intl.DateTimeFormat("en-US", {
+            timeZone: "Asia/Tehran",
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        const formatterDateHour = new Intl.DateTimeFormat("en-US", {
+            timeZone: "Asia/Tehran",
+            weekday: 'short',
+            hour: '2-digit'
+        });
+
+        const formatterMonthDay = new Intl.DateTimeFormat("en-US", {
+            timeZone: "Asia/Tehran",
+            month: 'short',
+            day: 'numeric'
+        });
+
         sensorData.forEach(d => {
-            let dateObj = new Date(d.timestamp);
+            const date = new Date(d.timestamp);
+
             if (selectedRange === "1h" || selectedRange === "24h") {
-                d.formattedTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                d.formattedTime = formatterTime.format(date);
             } else if (selectedRange === "7d") {
-                d.formattedTime = dateObj.toLocaleDateString([], { weekday: 'short', hour: '2-digit' });
+                d.formattedTime = formatterDateHour.format(date);
             } else if (selectedRange === "30d") {
-                d.formattedTime = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                d.formattedTime = formatterMonthDay.format(date);
             } else if (selectedRange === "all") {
-                let weekNumber = getWeekNumber(dateObj);
-                d.formattedTime = `Week ${weekNumber}`;
+                const tehranWeek = getWeekNumberInTehranInTehran(date);
+                d.formattedTime = `Week ${tehranWeek}`;
             }
         });
+
         if (selectedRange === "all") {
             sensorData.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         }
     }
 
-    function getWeekNumber(date) {
-        let start = new Date(date.getFullYear(), 0, 1);
-        let diff = date - start;
+
+    function getWeekNumberInTehran(date) {
+        const tehranDate = new Date(date.toLocaleString("en-US", { timeZone: "Asia/Tehran" }));
+        const start = new Date(tehranDate.getFullYear(), 0, 1);
+        const diff = tehranDate - start;
         return Math.ceil(diff / (7 * 24 * 60 * 60 * 1000));
     }
 
