@@ -271,48 +271,45 @@
 
             // Update "Last Updated"
             let latestData = sensorData[sensorData.length - 1];
-            let rawTimestamp = latestData.timestamp;
             if (!latestData || !latestData.timestamp) {
                 console.error("Latest data does not have a valid timestamp:", latestData);
-            } else {
-                let rawTimestamp = latestData.timestamp.trim();
-                let tehranTimestampStr = "";
+                return;
+            }
 
-                if (rawTimestamp.includes("T")) {
-                    // Already in ISO format?
-                    if (rawTimestamp.endsWith("Z")) {
-                        // Replace 'Z' (UTC) with the Tehran offset
-                        tehranTimestampStr = rawTimestamp.slice(0, -1) + "+03:30";
-                    } else {
-                        // Already has an offset or proper format; assume it's correct
-                        tehranTimestampStr = rawTimestamp;
-                    }
+            let rawTimestamp = latestData.timestamp.trim();
+            let tehranTimestampStr = "";
+
+            // Continue with your existing timestamp formatting code...
+            if (rawTimestamp.includes("T")) {
+                if (rawTimestamp.endsWith("Z")) {
+                    tehranTimestampStr = rawTimestamp.slice(0, -1) + "+03:30";
                 } else {
-                    // Timestamp is in "YYYY-MM-DD HH:MM:SS" format – convert it
-                    tehranTimestampStr = rawTimestamp.replace(' ', 'T') + "+03:30";
+                    tehranTimestampStr = rawTimestamp;
                 }
+            } else {
+                tehranTimestampStr = rawTimestamp.replace(' ', 'T') + "+03:30";
+            }
 
-                const parsedDate = new Date(tehranTimestampStr);
-                if (isNaN(parsedDate)) {
-                    console.error("Parsed date is invalid:", tehranTimestampStr);
-                } else {
-                    let newTimestamp = parsedDate.toISOString();
-                    if (newTimestamp !== lastValidTimestamp) {
-                        lastValidTimestamp = newTimestamp;
-                        // Format the date in Tehran time using the 'fa-IR' locale
-                        lastUpdated = parsedDate.toLocaleString('en-US', {
-                            timeZone: 'Asia/Tehran',
-                            hour12: false
-                        });
+            const parsedDate = new Date(tehranTimestampStr);
+            if (isNaN(parsedDate)) {
+                console.error("Parsed date is invalid:", tehranTimestampStr);
+            } else {
+                let newTimestamp = parsedDate.toISOString();
+                if (newTimestamp !== lastValidTimestamp) {
+                    lastValidTimestamp = newTimestamp;
+                    lastUpdated = parsedDate.toLocaleString('en-US', {
+                        timeZone: 'Asia/Tehran',
+                        hour12: false
+                    });
 
-                        if (lastUpdatedElement) {
-                            lastUpdatedElement.classList.remove("updated");
-                            void lastUpdatedElement.offsetWidth; // force reflow
-                            lastUpdatedElement.classList.add("updated");
-                        }
+                    if (lastUpdatedElement) {
+                        lastUpdatedElement.classList.remove("updated");
+                        void lastUpdatedElement.offsetWidth;
+                        lastUpdatedElement.classList.add("updated");
                     }
                 }
             }
+
 
 
             formatTimestamps();
