@@ -254,7 +254,12 @@
             console.log("📡 Fetching Data...");
 
             const sensorResponse = await fetch(`${ip}/api/get_data?range=${selectedRange}`);
-            sensorData = await sensorResponse.json();
+            const sensorJson = await sensorResponse.json();
+            if (!Array.isArray(sensorJson)) {
+                console.error("❌ API returned non-array data:", sensorJson);
+                return;
+            }
+            sensorData = sensorJson;
 
             const predictionResponse = await fetch(ip + "/api/get_predictions");
             predictionData = await predictionResponse.json();
