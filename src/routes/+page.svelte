@@ -255,6 +255,11 @@
 
             const sensorResponse = await fetch(`${ip}/api/get_data?range=${selectedRange}`);
             const sensorJson = await sensorResponse.json();
+            if (!sensorJson.data || !Array.isArray(sensorJson.data)) {
+                console.error("❌ Invalid format from backend:", sensorJson);
+                return;
+            }
+            sensorData = sensorJson.data;
             if (!Array.isArray(sensorJson)) {
                 console.error("❌ API returned non-array data:", sensorJson);
                 return;
