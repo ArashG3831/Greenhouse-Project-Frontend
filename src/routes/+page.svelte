@@ -31,7 +31,6 @@
 
     // Original name => user-friendly header text
     const COLUMN_LABELS = {
-        group_id:            "ID",
         date_time:           "Date/Time",
         temperature:         "Temperature (°C)",
         humidity:            "Humidity (%)",
@@ -56,7 +55,6 @@
             });
 
             return {
-                group_id:           obj.group_id,
                 date_time:          dateTimeStr,
                 temperature:        obj.temperature,
                 humidity:           obj.humidity,
