@@ -833,7 +833,7 @@
         // 🔁 Control state must be updated every second, always
         setInterval(() => {
             fetchControlState();
-        }, 1000);
+        }, 3000);
 
         // Other initial setup
         isMobile = window.innerWidth < 768;
