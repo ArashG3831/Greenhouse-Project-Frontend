@@ -605,7 +605,8 @@
                         borderWidth: 2,
                         pointRadius: 0,
                         pointHitRadius: 10,
-                        pointHoverRadius: 5
+                        pointHoverRadius: 5,
+                        tension: 0.4
                     },
                     {
                         label: "Predicted " + label,
@@ -616,7 +617,8 @@
                         borderDash: [5, 5],
                         pointRadius: 0,
                         pointHitRadius: 10,
-                        pointHoverRadius: 5
+                        pointHoverRadius: 5,
+                        tension: 0.4
                     }
                 ]
             },
