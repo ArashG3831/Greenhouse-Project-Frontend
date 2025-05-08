@@ -937,7 +937,7 @@
                     <div class="row row-cols-2 gx-3 gy-3 flex-grow-1">
                         <!-- Each .col is also d-flex so the card can fill it -->
                         <div class="col d-flex">
-                            <div class="sensor-card text-center flex-fill">
+                            <div class="p-0 sensor-card text-center flex-fill">
                                 <h3>Temperature</h3>
                                 <p class="fs-4 text-danger">{latestTemperature}</p>
                             </div>
@@ -1682,7 +1682,7 @@
         border: none;
         background-color: #007a7a;
         color: #ffffff;
-        padding: 10px 16px;
+        padding: 5px 8px;
         cursor: pointer;
         transition: background 0.2s;
     }
