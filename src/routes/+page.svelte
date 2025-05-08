@@ -288,6 +288,10 @@
 
                 // Update "Last Updated"
                 let rawTimestamp = sensorJson.latest_timestamp;
+                if (!rawTimestamp) {
+                    console.warn("⚠️ Skipped formatting: no timestamp yet.");
+                    return;
+                }
                 try {
                     const parsedUtcDate = new Date(rawTimestamp);
                     const formatter = new Intl.DateTimeFormat("en-US", {
