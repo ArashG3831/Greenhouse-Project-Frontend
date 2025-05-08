@@ -334,6 +334,35 @@
         }
     }
 
+    async function fetchLatestOnly() {
+        try {
+            const response = await fetch(ip + "/api/get_latest");
+            const latest = await response.json();
+
+            // Update only the live data and timestamp
+            latestTemperature = latest.temperature?.toFixed(2) + "°C" || "N/A";
+            latestHumidity = latest.humidity?.toFixed(2) + "%" || "N/A";
+            latestOxygen = latest.oxygen_level?.toFixed(2) + "%" || "N/A";
+            latestLight = latest.light_illumination?.toFixed(2) + " lx" || "N/A";
+
+            const parsedDate = new Date(latest.timestamp);
+            const formatter = new Intl.DateTimeFormat("en-US", {
+                timeZone: "Asia/Tehran",
+                year: "numeric", month: "2-digit", day: "2-digit",
+                hour: "2-digit", minute: "2-digit", second: "2-digit",
+                hour12: false
+            });
+            lastUpdated = formatter.format(parsedDate);
+
+            if (lastUpdatedElement) {
+                lastUpdatedElement.classList.remove("updated");
+                void lastUpdatedElement.offsetWidth;
+                lastUpdatedElement.classList.add("updated");
+            }
+        } catch (err) {
+            console.error("❌ Failed to fetch latest sensor data:", err);
+        }
+    }
 
 
 
@@ -851,6 +880,9 @@
         setInterval(() => {
             fetchOutsideWeather();
         }, 60000);
+
+        setInterval(fetchLatestOnly, 5000);
+
     });
 
 
