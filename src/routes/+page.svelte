@@ -829,9 +829,9 @@
         window.addEventListener("resize", updateIsMobile);
 
         // Clean up on destroy
-        return () => {
-            window.removeEventListener("resize", updateIsMobile);
-        };
+        // return () => {
+        //     window.removeEventListener("resize", updateIsMobile);
+        // };
 
         // Initial fetches
         fetchData();
