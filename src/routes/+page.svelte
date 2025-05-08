@@ -809,6 +809,10 @@
         return localStorage.getItem('loginToken');
     }
 
+    function updateIsMobile() {
+        isMobile = window.innerWidth < 768;
+    }
+
     onMount(() => {
         const token = getStoredToken();
         if (token && token === secretKey) {
@@ -818,6 +822,16 @@
             console.error("No valid token found in localStorage. Access denied.");
             isLoggedIn = false;
         }
+
+        updateIsMobile(); // Initial check
+
+        // Attach listener
+        window.addEventListener("resize", updateIsMobile);
+
+        // Clean up on destroy
+        return () => {
+            window.removeEventListener("resize", updateIsMobile);
+        };
 
         // Initial fetches
         fetchData();
