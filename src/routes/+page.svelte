@@ -249,78 +249,78 @@
     async function fetchData() {
         try {
             isLoading = true;
-            console.log("📡 Fetching Data...");
+            console.log("📡 Checking if data fetch is needed...");
 
-            const sensorResponse = await fetch(`${ip}/api/get_data?range=${selectedRange}`);
-            const sensorJson = await sensorResponse.json();
-            if (!sensorJson.data || !Array.isArray(sensorJson.data)) {
-                console.error("❌ Invalid format from backend:", sensorJson);
-                return;
-            }
-            sensorData = sensorJson.data;
+            if (selectedRange === "1h" || selectedRange === "24h") {
+                console.log(`📡 Fetching Data for range: ${selectedRange}`);
 
-            const predictionResponse = await fetch(ip + "/api/get_predictions");
-            predictionData = await predictionResponse.json();
-            predictionData = predictionData.reverse();
+                const sensorResponse = await fetch(`${ip}/api/get_data?range=${selectedRange}`);
+                const sensorJson = await sensorResponse.json();
+                if (!sensorJson.data || !Array.isArray(sensorJson.data)) {
+                    console.error("❌ Invalid format from backend:", sensorJson);
+                    return;
+                }
+                sensorData = sensorJson.data;
 
-            if (!sensorData || sensorData.length === 0) {
-                console.error("❌ API returned empty or invalid data");
-                return;
-            }
+                const predictionResponse = await fetch(ip + "/api/get_predictions");
+                predictionData = await predictionResponse.json();
+                predictionData = predictionData.reverse();
 
-            // Do NOT call updateWaterMode() or updateFanMode() here so that
-            // the toggle buttons don’t flicker on each fetch.
-            updateLiveSensorValues();
-
-            // Update "Last Updated"
-            let rawTimestamp = sensorJson.latest_timestamp;
-
-
-            try {
-                const parsedUtcDate = new Date(rawTimestamp); // Keep the Z, don't touch it
-                const formatter = new Intl.DateTimeFormat("en-US", {
-                    timeZone: "Asia/Tehran",
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                    hour12: false
-                });
-
-                lastUpdated = formatter.format(parsedUtcDate);
-
-                if (lastUpdatedElement) {
-                    lastUpdatedElement.classList.remove("updated");
-                    void lastUpdatedElement.offsetWidth;
-                    lastUpdatedElement.classList.add("updated");
+                if (!sensorData || sensorData.length === 0) {
+                    console.error("❌ API returned empty or invalid data");
+                    return;
                 }
 
-                lastValidTimestamp = parsedUtcDate.toISOString(); // store UTC version
-            } catch (err) {
-                console.error("Failed to format timestamp:", rawTimestamp, err);
-            }
+                updateLiveSensorValues();
 
+                // Update "Last Updated"
+                let rawTimestamp = sensorJson.latest_timestamp;
+                try {
+                    const parsedUtcDate = new Date(rawTimestamp);
+                    const formatter = new Intl.DateTimeFormat("en-US", {
+                        timeZone: "Asia/Tehran",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: false
+                    });
 
+                    lastUpdated = formatter.format(parsedUtcDate);
 
+                    if (lastUpdatedElement) {
+                        lastUpdatedElement.classList.remove("updated");
+                        void lastUpdatedElement.offsetWidth;
+                        lastUpdatedElement.classList.add("updated");
+                    }
 
-            formatTimestamps();
-            filterDataForChart();
+                    lastValidTimestamp = parsedUtcDate.toISOString();
+                } catch (err) {
+                    console.error("Failed to format timestamp:", rawTimestamp, err);
+                }
 
-            if (tempChart) {
-                updateCharts();
+                formatTimestamps();
+                filterDataForChart();
+
+                if (tempChart) {
+                    updateCharts();
+                } else {
+                    initializeCharts();
+                    updateCharts();
+                }
             } else {
-                // Initialize charts once if they haven't been created yet.
-                initializeCharts();
-                updateCharts();
+                console.log(`⚠️ Skipped fetch for range: ${selectedRange}`);
             }
+
         } catch (error) {
-            console.error("❌ Error fetching data:", error);
+            console.error("❌ Error in fetchData():", error);
         } finally {
             isLoading = false;
         }
     }
+
 
     function updateLiveSensorValues() {
         if (!sensorData || sensorData.length === 0) {
