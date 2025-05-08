@@ -803,30 +803,33 @@
     }
 
     onMount(() => {
-
         const token = getStoredToken();
         if (token && token === secretKey) {
             console.log("Browser recognized and token valid. You are authenticated.");
-            isLoggedIn = true
+            isLoggedIn = true;
         } else {
             console.error("No valid token found in localStorage. Access denied.");
-            isLoggedIn = false
-            // Optionally, add further handling here (like redirecting or disabling functionality)
+            isLoggedIn = false;
         }
 
-        // Always fetch once at the beginning
+        // Initial fetches
         fetchData();
         fetchOutsideWeather();
         fetchControlState();
 
+        // Periodic fetchData only for short-term ranges
         if (selectedRange === "1h" || selectedRange === "24h") {
             fetchInterval = setInterval(() => {
                 fetchData();
-                fetchControlState();
             }, 5000);
         }
 
+        // 🔁 Control state must be updated every second, always
+        setInterval(() => {
+            fetchControlState();
+        }, 1000);
 
+        // Other initial setup
         isMobile = window.innerWidth < 768;
 
         const savedTheme = getCookie("theme");
@@ -841,11 +844,12 @@
 
         document.addEventListener("click", handleClickOutside);
 
-
+        // Weather update every 60s
         setInterval(() => {
             fetchOutsideWeather();
         }, 60000);
     });
+
 
 </script>
 
