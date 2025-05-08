@@ -1334,7 +1334,7 @@
         /* No animation on the entire element */
     }
     .water-time.updated {
-        animation: fadeIn 1s;
+        /*animation: fadeIn 1s;*/
     }
     @keyframes fadeIn {
         from { opacity: 0; }
