@@ -503,7 +503,7 @@
             } else if (selectedRange === "30d") {
                 d.formattedTime = formatterMonthDay.format(date);
             } else if (selectedRange === "all") {
-                const tehranWeek = getWeekNumberInTehranInTehran(date);
+                const tehranWeek = getWeekNumberInTehran(date);
                 d.formattedTime = `Week ${tehranWeek}`;
             }
         });
