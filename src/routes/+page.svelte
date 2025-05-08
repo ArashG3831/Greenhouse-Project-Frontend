@@ -898,13 +898,13 @@
     <div class="container main-content">
         <div class="d-flex align-items-center header-info justify-content-md-start justify-content-between">
             <p bind:this={lastUpdatedElement} class="last-updated m-0 me-3">
-                Last Updated:
+                <span style="font-weight: 500;">Last Updated:</span>
                 {#if isMobile}
                     <br>
                 {/if}
                 {lastUpdated}
-
             </p>
+
             {#if isLoading}
                 <div class="spinner-border" role="status" style="width: 27px; height: 27px;">
                     <span class="visually-hidden">Loading...</span>
