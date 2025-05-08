@@ -271,9 +271,13 @@
 
                 sensorData = sensorJson.data;
 
-                const predictionResponse = await fetch(ip + "/api/get_predictions");
-                predictionData = await predictionResponse.json();
-                predictionData = predictionData.reverse();
+                if (["24h", "7d"].includes(selectedRange)) {
+                    const predictionResponse = await fetch(ip + "/api/get_predictions");
+                    predictionData = (await predictionResponse.json()).reverse();
+                } else {
+                    predictionData = [];
+                }
+
 
                 if (!sensorData || sensorData.length === 0) {
                     console.error("❌ API returned empty or invalid data");
@@ -691,7 +695,6 @@
 
         // Always fetch once immediately
         fetchData();
-        fetchControlState();
 
         // Clear existing interval (if any)
         if (fetchInterval) {
