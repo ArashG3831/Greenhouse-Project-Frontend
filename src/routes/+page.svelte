@@ -3,6 +3,8 @@
     import Chart from "chart.js/auto";
     import 'bootstrap/dist/css/bootstrap.min.css';
 
+    let fetchInterval = null;
+
     // ----- THEME TOGGLING SETUP -----
     let theme = "light";  // default theme set to Light Mode
 
@@ -675,9 +677,29 @@
 
     function selectOption(opt) {
         selectedRange = opt.value;
-        dispatch('change', opt.value); // So parent can respond
+        dispatch('change', opt.value);
         isOpen = false;
+
+        // Always fetch once immediately
+        fetchData();
+        fetchControlState();
+
+        // Clear existing interval (if any)
+        if (fetchInterval) {
+            clearInterval(fetchInterval);
+            fetchInterval = null;
+        }
+
+        // Only start polling if selectedRange is short-term
+        if (selectedRange === "1h" || selectedRange === "24h") {
+            fetchInterval = setInterval(() => {
+                fetchData();
+                fetchControlState();
+            }, 5000);
+        }
     }
+
+
 
     function handleClickOutside(event) {
         const dropdown = document.querySelector(".custom-dropdown");
@@ -801,10 +823,16 @@
 
         document.addEventListener("click", handleClickOutside);
 
-        setInterval(() => {
-            fetchData();
-            fetchControlState();
-        }, 5000);
+        // Only start polling if range is initially short-term
+        // Start polling if the initial range is short-term
+        if (selectedRange === "1h" || selectedRange === "24h") {
+            fetchInterval = setInterval(() => {
+                fetchData();
+                fetchControlState();
+            }, 5000);
+        }
+
+
         setInterval(() => {
             fetchOutsideWeather();
         }, 60000);
