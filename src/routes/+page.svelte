@@ -264,6 +264,7 @@
 
                 const sensorResponse = await fetch(`${ip}/api/get_data?range=${selectedRange}`);
                 const sensorJson = await sensorResponse.json();
+
                 if (!sensorJson.data || !Array.isArray(sensorJson.data)) {
                     console.error("❌ Invalid format from backend:", sensorJson);
                     return;
@@ -278,45 +279,12 @@
                     predictionData = [];
                 }
 
-
-                if (!sensorData || sensorData.length === 0) {
-                    console.error("❌ API returned empty or invalid data");
+                if (sensorData.length === 0) {
+                    console.error("❌ API returned empty sensor data");
                     return;
                 }
 
-                updateLiveSensorValues();
-
-                // Update "Last Updated"
-                let rawTimestamp = sensorJson.latest_timestamp;
-                if (!rawTimestamp) {
-                    console.warn("⚠️ Skipped formatting: no timestamp yet.");
-                    return;
-                }
-                try {
-                    const parsedUtcDate = new Date(rawTimestamp);
-                    const formatter = new Intl.DateTimeFormat("en-US", {
-                        timeZone: "Asia/Tehran",
-                        year: "numeric",
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                        hour12: false
-                    });
-
-                    lastUpdated = formatter.format(parsedUtcDate);
-
-                    if (lastUpdatedElement) {
-                        lastUpdatedElement.classList.remove("updated");
-                        void lastUpdatedElement.offsetWidth;
-                        lastUpdatedElement.classList.add("updated");
-                    }
-
-                    lastValidTimestamp = parsedUtcDate.toISOString();
-                } catch (err) {
-                    console.error("Failed to format timestamp:", rawTimestamp, err);
-                }
+                updateLiveSensorValues(); // Still uses sensorData
 
                 formatTimestamps();
                 filterDataForChart();
@@ -337,6 +305,7 @@
             isLoading = false;
         }
     }
+
 
     async function fetchLatestOnly() {
         try {
