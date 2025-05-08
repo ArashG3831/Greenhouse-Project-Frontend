@@ -1682,7 +1682,7 @@
         border: none;
         background-color: #007a7a;
         color: #ffffff;
-        padding: 5px 8px;
+        padding: 8px 10px;
         cursor: pointer;
         transition: background 0.2s;
     }
