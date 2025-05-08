@@ -821,6 +821,7 @@
         fetchData();
         fetchOutsideWeather();
         fetchControlState();
+        fetchLatestOnly()
 
         // Periodic fetchData only for short-term ranges
         if (selectedRange === "1h" || selectedRange === "24h") {
