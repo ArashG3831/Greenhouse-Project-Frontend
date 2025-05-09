@@ -4,6 +4,8 @@
     import 'bootstrap/dist/css/bootstrap.min.css';
 
     let fetchInterval = null;
+    let outsideHumidityNow = "Loading...";
+    let outsideHumidityTomorrow = "Loading...";
 
     // ----- THEME TOGGLING SETUP -----
     let theme = "light";  // default theme set to Light Mode
@@ -766,7 +768,7 @@
         try {
             // Fetch current weather for Tehran
             const currentResponse = await fetch(
-                "https://api.open-meteo.com/v1/forecast?latitude=35.6892&longitude=51.3890&current_weather=true&timezone=auto"
+                "https://api.open-meteo.com/v1/forecast?latitude=35.6892&longitude=51.3890&current_weather=true&hourly=relative_humidity_2m&timezone=auto"
             );
             const currentData = await currentResponse.json();
             if (!currentData.current_weather) {
@@ -775,6 +777,9 @@
             outsideTempNow = currentData.current_weather.temperature.toFixed(1);
             outsideWindNow = currentData.current_weather.windspeed.toFixed(1);
             currentWeatherCode = currentData.current_weather.weathercode;
+            const currentHourIndex = new Date().getHours();
+            const currentHumidityNow = currentData.hourly.relative_humidity_2m[currentHourIndex];
+            outsideHumidityNow = currentHumidityNow.toFixed(1);
 
             // Compute tomorrow's date in YYYY-MM-DD format
             const today = new Date();
@@ -787,7 +792,7 @@
 
             // Fetch daily forecast for tomorrow including the weather code
             const forecastResponse = await fetch(
-                `https://api.open-meteo.com/v1/forecast?latitude=35.6892&longitude=51.3890&daily=temperature_2m_max,wind_speed_10m_max,weathercode&timezone=auto&start_date=${tomorrowStr}&end_date=${tomorrowStr}`
+                `https://api.open-meteo.com/v1/forecast?latitude=35.6892&longitude=51.3890&daily=temperature_2m_max,wind_speed_10m_max,weathercode,relative_humidity_2m_max&timezone=auto&start_date=${tomorrowStr}&end_date=${tomorrowStr}`
             );
             const forecastData = await forecastResponse.json();
             if (!forecastData.daily) {
@@ -796,6 +801,9 @@
             outsideTempTomorrow = forecastData.daily.temperature_2m_max[0].toFixed(1);
             outsideWindTomorrow = forecastData.daily.wind_speed_10m_max[0].toFixed(1);
             forecastWeatherCode = forecastData.daily.weathercode[0];
+            const forecastHumidityTomorrow = forecastData.daily.relative_humidity_2m_max[0];
+            outsideHumidityTomorrow = forecastHumidityTomorrow.toFixed(1);
+
         } catch (error) {
             console.error("❌ Error fetching outside weather:", error);
         }
@@ -1110,7 +1118,9 @@
                             <img src="{getWeatherIconUrl(currentWeatherCode)}" alt="Current Weather Icon" style="width:60px; height:60px;" />
                         </div>
                         <p class="fs-5 mb-1 text-info">{outsideTempNow}°C</p>
-                        <p class="fs-6 text-secondary">Wind {outsideWindNow} m/s</p>
+                        <p class="m-0 fs-6 text-secondary">Wind {outsideWindNow} m/s</p>
+                        <p class="fs-6 text-secondary">Humidity {outsideHumidityNow}%</p>
+
                     </div>
                 </div>
                 <div class="col d-flex responsive-width">
@@ -1120,7 +1130,9 @@
                             <img src="{getWeatherIconUrl(forecastWeatherCode)}" alt="Tomorrow Weather Icon" style="width:60px; height:60px;" />
                         </div>
                         <p class="fs-5 mb-1 text-warning">{outsideTempTomorrow}°C</p>
-                        <p class="fs-6 text-secondary">Wind {outsideWindTomorrow} m/s</p>
+                        <p class="m-0 fs-6 text-secondary">Wind {outsideWindTomorrow} m/s</p>
+                        <p class="fs-6 text-secondary">Humidity {outsideHumidityTomorrow}%</p>
+
                     </div>
                 </div>
 
