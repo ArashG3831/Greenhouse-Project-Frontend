@@ -1113,7 +1113,7 @@
             <div class="row row-cols-2 gx-3 gy-3 flex-grow-1 text-center justify-content-center">
                 <div class="col d-flex responsive-width">
                     <div class="sensor-card text-center flex-fill">
-                        <h4 class="fw-bold mb-2">Now</h4>
+                        <div class="mb-2" style="font-size: 24px; font-weight: 600">Now</div>
                         <div class="weather-icon mb-3">
                             <img src="{getWeatherIconUrl(currentWeatherCode)}" alt="Current Weather Icon" style="width:60px; height:60px;" />
                         </div>
@@ -1125,7 +1125,7 @@
                 </div>
                 <div class="col d-flex responsive-width">
                     <div class="sensor-card text-center flex-fill">
-                        <h4 class="fw-bold mb-2">Tomorrow</h4>
+                        <div class="mb-2" style="font-size: 24px; font-weight: 600">Tomorrow</div>
                         <div class="weather-icon mb-3">
                             <img src="{getWeatherIconUrl(forecastWeatherCode)}" alt="Tomorrow Weather Icon" style="width:60px; height:60px;" />
                         </div>
