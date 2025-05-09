@@ -897,7 +897,7 @@
         <!-- Desktop Theme Toggle -->
         <button style="font-size: 16px"
                 on:click={toggleTheme}
-                class="theme-toggle d-none d-md-block">
+                class="theme-toggle-desktop d-none d-md-block">
             {#if theme === 'dark'}
                 ☀️ Switch to Light Theme
             {:else}
@@ -1166,7 +1166,7 @@
                                 <img class="fade-in mx-2" src="/smart.png" height="44px">
                             {/if}
                         </div>
-                        <span class="fade-in" style="flex: 1 1 auto; min-width: 0; text-overflow: ellipsis;">AI-Powered predictions {#if !isMobile}enabled{/if}</span>
+                        <span class="fade-in" style="flex: 1 1 auto; min-width: 0; text-overflow: ellipsis;">AI-Powered Predictions {#if !isMobile}Enabled{/if}</span>
                     {/if}
                 </div>
             </div>
@@ -1213,22 +1213,100 @@
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="footer p-md-5 p-4 mb-5 mt-md-5 mt-4" style="padding-bottom: 4px !important">
-        <div class="fw-semibold mb-4 team-title">Team Members</div>
-        <div class="ms-3 team-members">
-            <div>Arash Ganjei</div>
-            <div>Alireza Rezai</div>
-            <div>Mohammad Bagher Mohsenian</div>
-            <div>Mohammad Javad Kariminia</div>
-            <div>Nima Chitsaz</div>
+    <footer class="footer p-md-5 p-4 mb-5 mt-md-5 mt-4" style="padding-bottom: 4px !important; background-color: var(--header-bg); color: var(--header-text);">
+        <div class="row">
+
+            <!-- GitHub Links (right on desktop, top on mobile) -->
+            <div class="col-12 col-md-6 order-1 order-md-2 mb-4 mb-md-0">
+                <div class="fw-semibold mb-4 team-title" style="font-size: 36px;">GitHub Repositories</div>
+                <div class="ms-3 team-members">
+                    <div class="d-flex align-items-center" style="gap: 8px; margin-bottom: 5px;">
+                        <img src="/github.svg"
+                             alt="GitHub"
+                             class="github-icon" />
+                        <a href="https://github.com/ArashG3831/Greenhouse-Project-Frontend"
+                           target="_blank"
+                           class="footer-link-text">
+                            Front-end Project
+                        </a>
+                    </div>
+                    <div class="d-flex align-items-center" style="gap: 8px; margin-bottom: 5px;">
+                        <img src="/github.svg"
+                             alt="GitHub"
+                             class="github-icon" />
+                        <a href="https://github.com/ArashG3831/Greenhouse-Project"
+                           target="_blank"
+                           class="footer-link-text">
+                            Back-end Project
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Team Members (left on desktop, bottom on mobile) -->
+            <div class="col-12 col-md-6 order-2 order-md-1">
+                <div class="fw-semibold mb-4 team-title" style="font-size: 36px;">Team Members</div>
+                <div class="ms-3 team-members">
+                    <div style="font-size: 20px; margin-bottom: 5px;">Arash Ganjei</div>
+                    <div style="font-size: 20px; margin-bottom: 5px;">Alireza Rezai</div>
+                    <div style="font-size: 20px; margin-bottom: 5px;">Mohammad Bagher Mohsenian</div>
+                    <div style="font-size: 20px; margin-bottom: 5px;">Mohammad Javad Kariminia</div>
+                    <div style="font-size: 20px; margin-bottom: 5px;">Nima Chitsaz</div>
+                </div>
+            </div>
+
         </div>
-        <div class="text-center mt-5 team-rights">All rights reserved ©</div>
+
+        <div class="text-center mt-5 team-rights" style="font-size: 16px; color: #ccc;">All rights reserved ©</div>
     </footer>
+
+
+
 </div>
 
 <style>
-    /* In your <style> block or external stylesheet: */
+
+    .theme-toggle-desktop {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        font-size: 16px;
+        padding: 8px 14px;
+        border-radius: 20px;
+        font-weight: bold;
+        border: none;
+        background-color: #007a7a;
+        color: #ffffff;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .theme-toggle-desktop:hover {
+        background-color: #009999;
+    }
+
+
+    .github-icon {
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+        filter: invert(100%);
+        pointer-events: none; /* prevent accidental clicks */
+    }
+
+    .footer-link-text {
+        color: inherit;
+        text-decoration: none;
+        font-size: 20px;
+        transition: text-decoration 0.2s ease;
+    }
+
+    .footer-link-text:hover {
+        text-decoration: underline;
+    }
+
 
     /* Set up the button to use flex so icon + text line up well */
     .btn-custom-excel {
