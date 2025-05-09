@@ -1275,6 +1275,13 @@
         }
     }
 
+    @media (max-width: 768px) {
+        .team-title {
+            font-size: 28px !important;
+        }
+    }
+
+
     .theme-toggle-desktop {
         position: fixed;
         top: 20px;
