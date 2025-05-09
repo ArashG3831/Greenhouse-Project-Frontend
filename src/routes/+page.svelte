@@ -1267,6 +1267,14 @@
 
 <style>
 
+    @media (max-width: 768px) {
+        .team-members div,
+        .footer-link,
+        .footer-link-text {
+            font-size: 18px !important;
+        }
+    }
+
     .theme-toggle-desktop {
         position: fixed;
         top: 20px;
@@ -1404,6 +1412,7 @@
             max-width: 100%;
         }
     }
+
 
 
     .sensor-card.weather-card {
