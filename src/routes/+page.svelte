@@ -898,7 +898,7 @@
     <!-- HEADER -->
     <div class="container-fluid header text-center p-5 mb-md-5 mb-3">
         <div class="mobile-44px fw-bold">Greenhouse Dashboard<span style="font-size: 60%; vertical-align: super;">™</span></div>
-        <div class="mt-2 header-subtitle">
+        <div class="mt-2 mb-0 mb-md-2 header-subtitle">
             <i>Real-time Environmental Monitoring</i>
         </div>
 
@@ -1230,7 +1230,7 @@
 
             <!-- GitHub Links (right on desktop, top on mobile) -->
             <div class="col-12 col-md-6 order-1 order-md-2 mb-4 mb-md-0">
-                <div class="fw-semibold mb-4 team-title" style="font-size: 36px;">GitHub Repositories</div>
+                <div class="fw-semibold mb-3 mb-md-4 team-title" style="font-size: 36px;">GitHub Repositories</div>
                 <div class="ms-3 team-members">
                     <div class="d-flex align-items-center" style="gap: 8px; margin-bottom: 5px;">
                         <img src="/github.svg"
@@ -1258,7 +1258,7 @@
 
             <!-- Team Members (left on desktop, bottom on mobile) -->
             <div class="col-12 col-md-6 order-2 order-md-1">
-                <div class="fw-semibold mb-4 team-title" style="font-size: 36px;">Team Members</div>
+                <div class="fw-semibold mb-3 mb-md-4 team-title" style="font-size: 36px;">Team Members</div>
                 <div class="ms-3 team-members">
                     <div style="font-size: 20px; margin-bottom: 5px;">Arash Ganjei</div>
                     <div style="font-size: 20px; margin-bottom: 5px;">Alireza Rezai</div>
