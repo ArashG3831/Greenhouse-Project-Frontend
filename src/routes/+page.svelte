@@ -3,6 +3,12 @@
     import Chart from "chart.js/auto";
     import 'bootstrap/dist/css/bootstrap.min.css';
 
+    import ColorStripChart from '$lib/components/ColorStripChart.svelte';
+    import DownloadExcelButton from '$lib/components/DownloadExcelButton.svelte';
+    import DownloadPdfButton from '$lib/components/DownloadPdfButton.svelte';
+
+
+
     let fetchInterval = null;
     let outsideHumidityNow = "Loading...";
     let outsideHumidityTomorrow = "Loading...";
@@ -18,174 +24,6 @@
         const value = "; " + document.cookie;
         const parts = value.split("; " + name + "=");
         if (parts.length === 2) return decodeURIComponent(parts.pop().split(";").shift());
-    }
-
-    import ExcelJS from 'exceljs';
-    import pkg from 'file-saver';
-    const { saveAs } = pkg;
-
-
-    const NUMERIC_COLUMNS = [
-        "temperature",
-        "humidity",
-        "oxygen_level",
-        "co2_level",
-        "light_illumination"
-    ];
-
-    // Original name => user-friendly header text
-    const COLUMN_LABELS = {
-        date_time:           "Date/Time",
-        temperature:         "Temperature (°C)",
-        humidity:            "Humidity (%)",
-        oxygen_level:        "O₂ (%)",
-        co2_level:           "CO₂ (ppm)",
-        light_illumination:  "Light (lx)"
-    };
-
-    ////////////////////////////////////////////////////////////////////////////////
-    // 2) Convert your sensorData to a new array of rows
-    //    Skips 'timestamp'/'formattedTime' and merges them into 'date_time' column
-    ////////////////////////////////////////////////////////////////////////////////
-    function buildExcelRows(data) {
-        return data.map(obj => {
-            const dateTimeStr = new Date(obj.timestamp).toLocaleString("en-US", {
-                year:  "numeric",
-                month: "2-digit",
-                day:   "2-digit",
-                hour:  "2-digit",
-                minute:"2-digit",
-                hour12: true
-            });
-
-            return {
-                date_time:          dateTimeStr,
-                temperature:        obj.temperature,
-                humidity:           obj.humidity,
-                oxygen_level:       obj.oxygen_level,
-                co2_level:          obj.co2_level,
-                light_illumination: obj.light_illumination
-            };
-        });
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////
-    // 3) Build + style the Excel workbook, applying filters and column rename
-    ////////////////////////////////////////////////////////////////////////////////
-    async function downloadExcel() {
-        if (!sensorData || !sensorData.length) {
-            console.error("No data available to download.");
-            return;
-        }
-
-        const excelRows = buildExcelRows(sensorData);
-
-        // Collect the final property names in the order we want them
-        // e.g. ["date_time", "group_id", "temperature", ...]
-        const finalProps = Object.keys(excelRows[0]);
-
-        // Map those to user-friendly labels
-        const headers = finalProps.map(prop => COLUMN_LABELS[prop] ?? prop);
-        const colCount = headers.length;
-
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet("Data");
-
-        // --- Title row (row 1) ---
-        const titleText = "Greenhouse Environmental Data Overview";
-        const titleRowValues = new Array(colCount).fill("");
-        titleRowValues[0] = titleText;
-        const titleRow = worksheet.addRow(titleRowValues);
-
-        worksheet.mergeCells(1, 1, 1, colCount);
-
-        const titleCell = worksheet.getCell("A1");
-        titleCell.font = {
-            bold: true,
-            size: 18,
-            color: { argb: "FFFFFFFF" } // White text
-        };
-        titleCell.alignment = { horizontal: "center", vertical: "middle" };
-        titleCell.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FF2F5597" } // Dark blue background
-        };
-
-        // --- Header row (row 2) ---
-        const headerRow = worksheet.addRow(headers);
-        headerRow.eachCell((cell) => {
-            cell.font = { bold: true, size: 14, color: { argb: "FFFFFFFF" } };
-            cell.alignment = { horizontal: "center", vertical: "middle" };
-            cell.fill = {
-                type: "pattern",
-                pattern: "solid",
-                fgColor: { argb: "FF4F81BD" } // Lighter dark-blue fill
-            };
-        });
-
-        // --- Data rows (starting row 3) ---
-        const reversedData = excelRows.slice().reverse();
-        reversedData.forEach((rowObj) => {
-            const rowValues = finalProps.map(prop => rowObj[prop]);
-            const row = worksheet.addRow(rowValues);
-            row.eachCell(cell => {
-                cell.alignment = { horizontal: 'center', vertical: 'middle' };
-            });
-        });
-
-        // Row striping for data rows
-        worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
-            // Skip row 1 (title) + row 2 (headers). Start at row 3
-            if (rowNumber >= 3 && rowNumber % 2 === 0) {
-                row.eachCell(cell => {
-                    cell.fill = {
-                        type: "pattern",
-                        pattern: "solid",
-                        fgColor: { argb: "FFCCECFF" } // pastel blue
-                    };
-                });
-            }
-        });
-
-        // Numeric formatting
-        NUMERIC_COLUMNS.forEach(colName => {
-            const colIndex = finalProps.indexOf(colName);
-            if (colIndex >= 0) {
-                worksheet.getColumn(colIndex + 1).numFmt = "0.00";
-            }
-        });
-
-        // Auto-fit columns
-        const MAX_WIDTH = 50;
-        const EXTRA_PADDING = 5;
-        finalProps.forEach((prop, colIndex) => {
-            let maxLength = headers[colIndex].length;
-            excelRows.forEach(row => {
-                const val = row[prop] ? row[prop].toString() : "";
-                maxLength = Math.max(maxLength, val.length);
-            });
-            worksheet.getColumn(colIndex + 1).width = Math.min(MAX_WIDTH, maxLength + EXTRA_PADDING);
-        });
-
-        // 4) Turn on AutoFilter on the header row (row 2)
-        worksheet.autoFilter = {
-            from: { row: 2, column: 1 },
-            to:   { row: 2, column: colCount }
-        };
-
-        // 5) Generate + download
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: "application/octet-stream" });
-        const fileNameMapping = {
-            "1h": "Greenhouse Data Last Hour.xlsx",
-            "24h": "Greenhouse Data Last 24 Hours.xlsx",
-            "7d": "Greenhouse Data Last 7 Days.xlsx",
-            "30d": "Greenhouse Data Last 30 Days.xlsx",
-            "all": "Greenhouse Data All.xlsx"
-        };
-        const fileName = fileNameMapping[selectedRange] || `Greenhouse Data ${selectedRange}.xlsx`;
-        saveAs(blob, fileName);
     }
 
 
@@ -821,6 +659,34 @@
         isMobile = window.innerWidth < 768;
     }
 
+
+
+    // Simulate per-minute color + timestamp for 7 days (10080 minutes)
+    let colors = [];
+    let timestamps = [];
+
+    function generateColorTimelineData() {
+        const totalMinutes = 10080;
+        const now = Date.now();
+
+        for (let i = 0; i < totalMinutes; i++) {
+            const t = i / totalMinutes;
+
+            // Simulate color gradient from green to brown
+            const r = Math.floor(34 + t * (165 - 34));
+            const g = Math.floor(139 - t * 139);
+            const b = Math.floor(34 + t * (42 - 34));
+            colors.push(`rgb(${r},${g},${b})`);
+
+            // Generate timestamp for each data point (1 min apart)
+            timestamps.push(now - (totalMinutes - i) * 60 * 1000);
+        }
+    }
+
+    generateColorTimelineData();
+
+
+
     onMount(() => {
         const token = getStoredToken();
         if (token && token === secretKey) {
@@ -887,7 +753,7 @@
 </script>
 
 <svelte:head>
-    <title>Greenhouse Dahboard - Real-time Environmental Monitoring</title>  <!-- <- Change this line -->
+    <title>Greenhouse Dahboard™ - Real-time Environmental Monitoring</title>  <!-- <- Change this line -->
     <link rel="preload" as="image" href="/smart.png" />
     <link rel="preload" as="image" href="/smart2.png" />
 </svelte:head>
@@ -1063,45 +929,6 @@
                 </div>
             </div>
 
-            <!-- Outside Weather Section -->
-<!--            <div class="row g-4 mt-md-5 mt-4">-->
-<!--                <h2 class="section-title mb-4">Outside Weather</h2>-->
-<!--                <div class="" style="display: flex; justify-content: center; align-items: center;">-->
-<!--                    &lt;!&ndash; Current Weather (Now) &ndash;&gt;-->
-<!--                    <div class="mx-2">-->
-<!--                        <div class="sensor-card weather-card text-center p-3">-->
-<!--                            <h4 class="fw-bold mb-2">Now</h4>-->
-<!--                            <div class="weather-icon mb-3">-->
-<!--                                <img src="{getWeatherIconUrl(currentWeatherCode)}" alt="Current Weather Icon" style="width:60px; height:60px;" />-->
-<!--                            </div>-->
-<!--                            <p class="fs-5 mb-1 text-info">{outsideTempNow}°C</p>-->
-<!--                            <p class="fs-6 text-secondary">Wind {outsideWindNow} m/s</p>-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                    &lt;!&ndash; Tomorrow's Forecast &ndash;&gt;-->
-<!--                    <div class="mx-2">-->
-<!--                        <div class="sensor-card weather-card text-center p-3">-->
-<!--                            <h4 class="fw-bold mb-2">Tomorrow</h4>-->
-<!--                            <div class="weather-icon mb-3">-->
-<!--                                <img src="{getWeatherIconUrl(forecastWeatherCode)}" alt="Tomorrow Weather Icon" style="width:60px; height:60px;" />-->
-<!--                            </div>-->
-<!--                            <p class="fs-5 mb-1 text-warning">{outsideTempTomorrow}°C</p>-->
-<!--                            <p class="fs-6 text-secondary">Wind {outsideWindTomorrow} m/s</p>-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--            </div>-->
-
-<!--             Optional custom styles to enforce a max width and center the cards -->
-
-<!--            <div class="row g-4 mt-md-5 mt-4 mt-5 text-center">-->
-<!--                <div class="col-6 sensor-card" style="">-->
-
-<!--                </div>-->
-<!--                <div class="col-6 sensor-card" style="">-->
-
-<!--                </div>-->
-<!--            </div>-->
             <h2 class="section-title mb-4 mt-md-5 mt-4">
                 Official Weather Forecast
                 <br>
@@ -1210,18 +1037,26 @@
                         <canvas id="lightChart"></canvas>
                     </div>
                 </div>
+                <div class="col">
+                    <div class="chart-container">
+                        <ColorStripChart {colors} {timestamps} />
+                    </div>
+                </div>
             </div>
 
-            <div class="text-center mt-md-5 mt-4">
-                <button class="btn-custom-excel" on:click={downloadExcel}>
-                    <img class="excel-icon" src="/excel.webp" alt="Excel icon" />
-                    Download Data as Excel
-                </button>
+        </div>
+
+        <div class="mt-md-5 mt-4">
+            <h2 class="section-title mb-3">Export Data</h2>
+
+            <div class="row justify-content-center g-3">
+                <div class="col-12 col-md-auto d-flex justify-content-center">
+                    <DownloadExcelButton {sensorData} {selectedRange} />
+                </div>
+                <div class="col-12 col-md-auto d-flex justify-content-center">
+                    <DownloadPdfButton {sensorData} {selectedRange} />
+                </div>
             </div>
-
-
-
-
         </div>
     </div>
 
@@ -1278,6 +1113,20 @@
 </div>
 
 <style>
+
+    .color-strip {
+        display: flex;
+        width: 100%;
+        height: 25px;
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0 0 4px rgba(0,0,0,0.2);
+    }
+
+    .color-block {
+        flex: 1 0 auto;       /* All blocks shrink equally */
+        height: 100%;
+    }
 
     @media (max-width: 768px) {
         .team-members div,
