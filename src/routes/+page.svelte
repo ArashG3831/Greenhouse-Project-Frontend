@@ -6,8 +6,23 @@
     import ColorStripChart from '$lib/components/ColorStripChart.svelte';
     import DownloadExcelButton from '$lib/components/DownloadExcelButton.svelte';
     import DownloadPdfButton from '$lib/components/DownloadPdfButton.svelte';
+    import ColorPicker from '$lib/components/ColorPicker.svelte';
+    import LightControlCard from "$lib/components/LightControlCard.svelte";
+    // Light control state:
+    let lightIntensity = 50;
+    let lightColor     = '#ff0000';
+    let lightIsOn      = true;
 
+    function updateLightControl(state){
+        // send to backend, MQTT, etc.
+        console.log('new lamp state', state);
+    }
 
+    // Optional: send every update to backend:
+    function updateLightBackend() {
+        // e.g. fetch('/api/set_light', { method:'POST', body: JSON.stringify({ on: lightOn, intensity: lightIntensity, color: lightColor }) });
+        console.log('Light State →', { on: lightOn, intensity: lightIntensity, color: lightColor });
+    }
 
     let fetchInterval = null;
     let outsideHumidityNow = "Loading...";
@@ -74,6 +89,9 @@
     let latestHumidity = "Loading...";
     let latestOxygen = "Loading...";
     let latestLight = "Loading...";
+    let latestCO2 = "Loading...";
+    let latestLeafColor = "#00ff00"; // or your dynamic value
+    let latestSoilMoisture = "Loading...";
 
     // Track "Last Updated" and loading state
     let lastUpdated = "Loading...";
@@ -157,6 +175,9 @@
             latestHumidity = latest.humidity?.toFixed(2) + "%" || "N/A";
             latestOxygen = latest.oxygen_level?.toFixed(2) + "%" || "N/A";
             latestLight = latest.light_illumination?.toFixed(2) + " lx" || "N/A";
+            latestCO2 = latest.co2_level?.toFixed(2) + " ppm" || "N/A";
+            latestLeafColor = latest.leaf_color || "#888"; // depends on how you store color
+            latestOxygen = latest.soil_moisture?.toFixed(2) + "%" || "N/A"; // soil now
 
             const parsedDate = new Date(latest.timestamp);
             const formatter = new Intl.DateTimeFormat("en-US", {
@@ -823,9 +844,8 @@
 
                     <!-- Container for the sensor cards. Use flex-grow-1 so it fills leftover space -->
                     <div class="row row-cols-2 gx-3 gy-3 flex-grow-1">
-                        <!-- Each .col is also d-flex so the card can fill it -->
                         <div class="col d-flex">
-                            <div class="p-0 sensor-card text-center flex-fill">
+                            <div class="sensor-card text-center flex-fill">
                                 <h3>Temperature</h3>
                                 <p class="fs-4 text-danger">{latestTemperature}</p>
                             </div>
@@ -838,8 +858,8 @@
                         </div>
                         <div class="col d-flex">
                             <div class="sensor-card text-center flex-fill">
-                                <h3>Oxygen Level</h3>
-                                <p class="fs-4 text-success">{latestOxygen}</p>
+                                <h3>Soil Moisture</h3>
+                                <p class="fs-4 text-success">{latestOxygen}</p> <!-- Replace with real var if needed -->
                             </div>
                         </div>
                         <div class="col d-flex">
@@ -848,7 +868,25 @@
                                 <p class="fs-4 text-warning">{latestLight}</p>
                             </div>
                         </div>
+                        <div class="col d-flex">
+                            <div class="sensor-card text-center flex-fill">
+                                <h3>CO₂ Level</h3>
+                                <p class="fs-4 text-purple">{latestCO2}</p> <!-- Add `let latestCO2` and fetch -->
+                            </div>
+                        </div>
+                        <div class="col d-flex">
+                            <div class="sensor-card text-center flex-fill">
+                                <h3>Leaf Color</h3>
+                                <div
+                                        class="w-50 mx-auto my-2"
+                                        style="height: 30px; border-radius: 6px; background: {latestLeafColor}; box-shadow: inset 0 0 4px rgba(0,0,0,0.3);
+      "
+                                ></div>
+                            </div>
+                        </div>
+
                     </div>
+
                 </div>
 
                 <!-- RIGHT COLUMN (Controls) -->
@@ -893,7 +931,7 @@
 
 
                     <!-- Water Control Card -->
-                    <div class="sensor-card text-center control-card-container">
+                    <div class="sensor-card text-center mb-3 control-card-container">
                         <h3>Water Control</h3>
                         <p class="last-watered mb-2">
                             Last watered:
@@ -925,6 +963,20 @@
                             <div class="control-overlay"></div>
                         {/if}
                     </div>
+
+                    <!-- Light Control Card -->
+                    <div class="text-center">
+                        <LightControlCard
+                                intensity={lightIntensity}
+                                color={lightColor}
+                                on:update={updateLightControl}
+                        />
+
+                    </div>
+
+
+
+
 
                 </div>
             </div>
@@ -1113,6 +1165,76 @@
 </div>
 
 <style>
+
+    /* Light Control Card Overrides */
+    .light-control-card {
+        padding: 1rem;
+    }
+
+    /* Ensure toggle buttons are uniform width */
+    .light-control-card .btn-group .btn {
+        width: 60px;
+        font-weight: 500;
+    }
+
+    /* Responsive spacing */
+    @media (min-width: 768px) {
+        .light-control-card .d-flex {
+            flex-wrap: nowrap;
+        }
+    }
+    @media (max-width: 767px) {
+        /* stacked on mobile */
+        .light-control-card .d-flex {
+            flex-direction: column !important;
+        }
+    }
+
+    .light-control-grid {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: center;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .intensity-wrapper,
+    .color-wrapper {
+        flex: 1 1 45%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .custom-color-picker {
+        width: 48px;
+        height: 48px;
+        padding: 0;
+        border: none;
+        background: none;
+        box-shadow: 0 0 4px rgba(0,0,0,0.2);
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+        .light-control-grid {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .intensity-wrapper,
+        .color-wrapper {
+            flex: 1 1 100%;
+        }
+
+        .custom-color-picker {
+            width: 100%;
+            height: 40px;
+        }
+    }
+
 
     .color-strip {
         display: flex;

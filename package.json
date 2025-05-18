@@ -20,6 +20,7 @@
 		"vite": "^6.0.0"
 	},
 	"dependencies": {
+		"@jaames/iro": "^5.5.2",
 		"bootstrap": "^5.3.3",
 		"chart.js": "^4.4.8",
 		"exceljs": "^4.4.0",
