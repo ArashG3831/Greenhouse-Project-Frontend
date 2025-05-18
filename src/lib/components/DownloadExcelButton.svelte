@@ -160,7 +160,6 @@
     .excel-icon {
         width: 32px;
         height: 32px;
-        margin-right: 0.6rem;
         transition: transform 0.2s, filter 0.2s;
     }
 
