@@ -175,7 +175,6 @@
             latestLight = latest.light_illumination?.toFixed(2) + " lx" || "N/A";
             latestCO2 = latest.co2_level?.toFixed(2) + " ppm" || "N/A";
             latestLeafColor = latest.leaf_color || "#888"; // depends on how you store color
-            latestOxygen = latest.soil_moisture?.toFixed(2) + "%" || "N/A"; // soil now
 
             const parsedDate = new Date(latest.timestamp);
             const formatter = new Intl.DateTimeFormat("en-US", {
@@ -522,7 +521,7 @@
         const ctxCO2 = document.getElementById("co2Chart")?.getContext("2d");
         const ctxLight = document.getElementById("lightChart")?.getContext("2d");
 
-        if (!ctxTemp || !ctxHumidity || !ctxOxygen || !ctxCO2 || !ctxLight) {
+        if (!ctxTemp || !ctxHumidity || !ctxSoilMoisture || !ctxCO2 || !ctxLight) {
             console.error("❌ Some chart canvases were not found in the DOM.");
             return;
         }

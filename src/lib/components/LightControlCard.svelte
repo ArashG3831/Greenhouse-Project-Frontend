@@ -2,7 +2,8 @@
     import { createEventDispatcher } from 'svelte';
 
     export let intensity = 50;
-    export let color = '#ff0000';
+    export let color: string = '#ff0000';
+    $: color = color && /^#[0-9A-Fa-f]{6}$/.test(color) ? color : '#ff0000';
     export let isLoggedIn: boolean = false; // passed in from parent
 
     const dispatch = createEventDispatcher();
