@@ -127,6 +127,8 @@
                 }
 
                 sensorData = sensorJson.data;
+                updateColorChartData();
+
 
                 if (["24h", "7d"].includes(selectedRange)) {
                     const predictionResponse = await fetch(ip + "/api/get_predictions");
@@ -684,25 +686,10 @@
     let colors = [];
     let timestamps = [];
 
-    function generateColorTimelineData() {
-        const totalMinutes = 10080;
-        const now = Date.now();
-
-        for (let i = 0; i < totalMinutes; i++) {
-            const t = i / totalMinutes;
-
-            // Simulate color gradient from green to brown
-            const r = Math.floor(34 + t * (165 - 34));
-            const g = Math.floor(139 - t * 139);
-            const b = Math.floor(34 + t * (42 - 34));
-            colors.push(`rgb(${r},${g},${b})`);
-
-            // Generate timestamp for each data point (1 min apart)
-            timestamps.push(now - (totalMinutes - i) * 60 * 1000);
-        }
+    function updateColorChartData() {
+        colors = sensorData.map(d => d.leaf_color || "#00ff00");
+        timestamps = sensorData.map(d => d.timestamp);
     }
-
-    generateColorTimelineData();
 
 
 
