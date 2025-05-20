@@ -38,7 +38,7 @@
         // 🧠 dynamically import pdfmake only on client
         const pdfMakeModule = await import("pdfmake/build/pdfmake");
         const pdfFonts = await import("pdfmake/build/vfs_fonts");
-        pdfMakeModule.default.vfs = pdfFonts.default.pdfMake.vfs;
+        pdfMakeModule.default.vfs = pdfFonts.default?.vfs ?? pdfFonts.vfs;
 
         const headers = Object.values(COLUMN_LABELS);
         const rows = buildPdfRows(sensorData);
