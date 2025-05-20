@@ -86,7 +86,6 @@
     // Live sensor values
     let latestTemperature = "Loading...";
     let latestHumidity = "Loading...";
-    let latestSoilMoisture = "Loading...";
     let latestLight = "Loading...";
     let latestCO2 = "Loading...";
     let latestLeafColor = "#00ff00"; // or your dynamic value
