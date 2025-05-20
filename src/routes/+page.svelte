@@ -766,9 +766,6 @@
     <link rel="preload" as="image" href="/smart2.png" />
 </svelte:head>
 
-<pre>{JSON.stringify(colors.slice(0, 5), null, 2)}</pre>
-<pre>{JSON.stringify(timestamps.slice(0, 5), null, 2)}</pre>
-
 <!-- Outer wrapper toggles between dark/light -->
 <div class={theme}>
     <!-- HEADER -->
