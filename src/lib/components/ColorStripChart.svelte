@@ -7,12 +7,12 @@
     let visibleTimestamps = [];
 
     function updateVisibleData() {
-        if (!containerEl) return;
+        if (!containerEl || colors.length === 0) return;
 
-        const width = containerEl.clientWidth;
-        const step = Math.max(1, Math.floor(colors.length / width));
-        visibleColors = colors.filter((_, i) => i % step === 0);
-        visibleTimestamps = timestamps.filter((_, i) => i % step === 0);
+        const width = containerEl.clientWidth || 100;
+        const step = 1; // show everything
+        visibleColors = [...colors]; // show all, let CSS squish or stretch
+        visibleTimestamps = [...timestamps];
     }
 
     function getTickCount() {
@@ -71,12 +71,13 @@
         display: flex;
         flex: 1 1 auto;
         border-radius: 8px 8px 0 0;
-        overflow: hidden;
+        overflow-x: auto;
     }
 
     .color-block {
         flex: 1 0 auto;
         height: 100%;
+        min-width: 2px;
     }
 
     .tick-strip {
