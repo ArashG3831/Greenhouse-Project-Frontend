@@ -80,13 +80,13 @@
     let sensorData = [];
     let predictionData = [];
     let selectedRange = "7d";
-    let tempChart, humidityChart, oxygenChart, co2Chart, lightChart;
+    let tempChart, humidityChart, soilMoistureChart, co2Chart, lightChart;
     let isMobile = false;
 
     // Live sensor values
     let latestTemperature = "Loading...";
     let latestHumidity = "Loading...";
-    let latestOxygen = "Loading...";
+    let latestSoilMoisture = "Loading...";
     let latestLight = "Loading...";
     let latestCO2 = "Loading...";
     let latestLeafColor = "#00ff00"; // or your dynamic value
@@ -172,7 +172,7 @@
             // Update only the live data and timestamp
             latestTemperature = latest.temperature?.toFixed(2) + "°C" || "N/A";
             latestHumidity = latest.humidity?.toFixed(2) + "%" || "N/A";
-            latestOxygen = latest.oxygen_level?.toFixed(2) + "%" || "N/A";
+            latestSoilMoisture = latest.soil_moisture?.toFixed(2) + "%" || "N/A";
             latestLight = latest.light_illumination?.toFixed(2) + " lx" || "N/A";
             latestCO2 = latest.co2_level?.toFixed(2) + " ppm" || "N/A";
             latestLeafColor = latest.leaf_color || "#888"; // depends on how you store color
@@ -207,7 +207,7 @@
         let latestData = sensorData[sensorData.length - 1];
         latestTemperature = latestData?.temperature?.toFixed(2) + "°C" || "N/A";
         latestHumidity = latestData?.humidity?.toFixed(2) + "%" || "N/A";
-        latestOxygen = latestData?.oxygen_level?.toFixed(2) + "%" || "N/A";
+        latestSoilMoisture = latestData?.soil_moisture?.toFixed(2) + "%" || "N/A";
         latestLight = latestData?.light_illumination?.toFixed(2) + " lx" || "N/A";
     }
 
@@ -406,7 +406,7 @@
 
         updateChart(tempChart, labels, predLabels, sensorData.map(d => d.temperature), scaledPredData.map(d => d.temperature));
         updateChart(humidityChart, labels, predLabels, sensorData.map(d => d.humidity), scaledPredData.map(d => d.humidity));
-        updateChart(oxygenChart, labels, predLabels, sensorData.map(d => d.oxygen_level), scaledPredData.map(d => d.oxygen_level));
+        updateChart(soilMoistureChart, labels, predLabels, sensorData.map(d => d.soil_moisture), scaledPredData.map(d => d.soil_moisture));
         updateChart(co2Chart, labels, predLabels, sensorData.map(d => d.co2_level), scaledPredData.map(d => d.co2_level));
         updateChart(lightChart, labels, predLabels, sensorData.map(d => d.light_illumination), scaledPredData.map(d => d.light_illumination));
     }
@@ -519,7 +519,7 @@
     function initializeCharts() {
         const ctxTemp = document.getElementById("temperatureChart")?.getContext("2d");
         const ctxHumidity = document.getElementById("humidityChart")?.getContext("2d");
-        const ctxOxygen = document.getElementById("oxygenChart")?.getContext("2d");
+        const ctxSoilMoisture = document.getElementById("soilMoistureChart")?.getContext("2d");
         const ctxCO2 = document.getElementById("co2Chart")?.getContext("2d");
         const ctxLight = document.getElementById("lightChart")?.getContext("2d");
 
@@ -529,7 +529,7 @@
         }
         tempChart = createChart(ctxTemp, "Temperature (°C)", "red");
         humidityChart = createChart(ctxHumidity, "Humidity (%)", "blue");
-        oxygenChart = createChart(ctxOxygen, "Oxygen Level (%)", "green");
+        soilMoistureChart = createChart(ctxSoilMoisture, "Soil Moisture (%)", "green");
         co2Chart = createChart(ctxCO2, "CO2 Level (ppm)", "purple");
         lightChart = createChart(ctxLight, "Light (lx)", "orange");
     }
@@ -859,9 +859,10 @@
                         <div class="col d-flex">
                             <div class="sensor-card text-center flex-fill">
                                 <h3>Soil Moisture</h3>
-                                <p class="fs-4 text-success">{latestOxygen}</p> <!-- Replace with real var if needed -->
+                                <p class="fs-4 text-success">{latestSoilMoisture}</p>
                             </div>
                         </div>
+
                         <div class="col d-flex">
                             <div class="sensor-card text-center flex-fill">
                                 <h3>Light Intensity</h3>
@@ -1079,7 +1080,7 @@
                 </div>
                 <div class="col">
                     <div class="chart-container">
-                        <canvas id="oxygenChart"></canvas>
+                        <canvas id="soilMoistureChart"></canvas>
                     </div>
                 </div>
                 <div class="col">
