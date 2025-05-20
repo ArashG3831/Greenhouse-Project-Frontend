@@ -6,7 +6,6 @@
     import ColorStripChart from '$lib/components/ColorStripChart.svelte';
     import DownloadExcelButton from '$lib/components/DownloadExcelButton.svelte';
     import DownloadPdfButton from '$lib/components/DownloadPdfButton.svelte';
-    import ColorPicker from '$lib/components/ColorPicker.svelte';
     import LightControlCard from "$lib/components/LightControlCard.svelte";
     // Light control state:
     let lightIntensity = 50;
@@ -969,10 +968,13 @@
                         <LightControlCard
                                 intensity={lightIntensity}
                                 color={lightColor}
+                                isLoggedIn={isLoggedIn}
                                 on:update={updateLightControl}
                         />
 
                     </div>
+
+
 
 
 
