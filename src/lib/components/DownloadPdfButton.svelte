@@ -54,7 +54,7 @@
                 {
                     table: {
                         headerRows: 1,
-                        widths: ['*', '*', '*', '*', '*', '*'],
+                        widths: ['1.5*', '*', '*', '*', '*', '*'],
                         body: body
                     },
                     layout: {
