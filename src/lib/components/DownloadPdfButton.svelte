@@ -20,20 +20,14 @@
 
             return [
                 dateTimeStr,
-                safeFixed(obj.temperature),
-                safeFixed(obj.humidity),
-                safeFixed(obj.oxygen_level),
-                safeFixed(obj.co2_level),
-                safeFixed(obj.light_illumination)
+                obj.temperature?.toFixed(2) ?? "",
+                obj.humidity?.toFixed(2) ?? "",
+                obj.oxygen_level?.toFixed(2) ?? "",
+                obj.co2_level?.toFixed(2) ?? "",
+                obj.light_illumination?.toFixed(2) ?? ""
             ];
         });
     }
-
-    function safeFixed(value) {
-        const num = Number(value);
-        return isNaN(num) ? "N/A" : num.toFixed(2);
-    }
-
 
     async function downloadPdf() {
         if (!sensorData || sensorData.length === 0) {
@@ -60,7 +54,7 @@
                 {
                     table: {
                         headerRows: 1,
-                        widths: ['1.5*', '*', '*', '*', '*', '*'],
+                        widths: ['*', '*', '*', '*', '*', '*'],
                         body: body
                     },
                     layout: {
