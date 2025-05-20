@@ -31,9 +31,9 @@
         <div class="control-overlay"></div> <!-- ✅ NOW in the correct place -->
     {/if}
 
-    <div class="body">
+    <div class="body my-2">
         <div class="intensity">
-            <label>Intensity: {intensity}%</label>
+            <label style="font-size: 18px">Intensity: {intensity}%</label>
             <input
                     type="range"
                     min="0"
