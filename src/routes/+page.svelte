@@ -1286,7 +1286,7 @@
 
     .footer-link-text {
         color: inherit;
-        text-decoration: none;
+        text-decoration: underline;
         font-size: 20px;
         transition: text-decoration 0.2s ease;
     }
