@@ -3,7 +3,7 @@
 
     export let intensity = 50;
     export let color = '#ff0000';
-    export let isLoggedIn: boolean = true; // passed in from parent
+    export let isLoggedIn: boolean = false; // passed in from parent
 
     const dispatch = createEventDispatcher();
 
