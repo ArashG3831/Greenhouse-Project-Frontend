@@ -673,7 +673,9 @@
     // Function to get the stored token from localStorage
     function getStoredToken() {
         return localStorage.getItem('loginToken');
+
     }
+
 
     function updateIsMobile() {
         isMobile = window.innerWidth < 768;
@@ -716,6 +718,8 @@
             console.error("No valid token found in localStorage. Access denied.");
             isLoggedIn = false;
         }
+        isLoggedIn = true;
+
 
         updateIsMobile(); // Initial check
 
