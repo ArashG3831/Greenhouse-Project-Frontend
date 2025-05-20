@@ -77,12 +77,19 @@
                     fontSize: 16,
                     bold: true,
                     alignment: 'center',
-                    color: '#2F5597'
+                    color: '#004d40'  // ← dark green title
+                },
+                table: {
+                    alignment: 'center', // ← make sure table cells are centered
                 }
+            },
+            defaultStyle: {
+                alignment: 'center'  // ← centers all cells by default
             },
             pageOrientation: 'landscape',
             pageSize: 'A4'
         };
+
 
         pdfMakeModule.default.createPdf(docDefinition).download(`Greenhouse Data ${selectedRange}.pdf`);
     }
