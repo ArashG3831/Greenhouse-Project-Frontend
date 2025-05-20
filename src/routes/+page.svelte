@@ -58,7 +58,7 @@
     }
 
     function updateChartThemes() {
-        [tempChart, humidityChart, oxygenChart, co2Chart, lightChart].forEach(chart => {
+        [tempChart, humidityChart, soilMoistureChart, co2Chart, lightChart].forEach(chart => {
             if (chart) {
                 if (chart.options.scales.x) {
                     chart.options.scales.x.ticks.color = getTextColor();
