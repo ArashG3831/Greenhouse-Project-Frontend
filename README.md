@@ -34,7 +34,7 @@ VITE_APP_NAME=Greenhouse
 VITE_REFRESH_MS=5000
 VITE_WEATHER_REFRESH_MS=60000
 ```
-> In production, set `VITE_API_BASE` to your domain (e.g., `https://arashg.ir`).
+> In production, set `VITE_API_BASE` to your domain (e.g., `https://ArashG.ir`).
 
 ---
 
