@@ -9,7 +9,7 @@ Svelte SPA for real‑time greenhouse telemetry, control, and forecasts. Talks t
 
 ---
 
-## Repo layout (suggested)
+## Repo layout
 ```
 src/
   lib/components/         # Cards, charts, controls, color picker wrapper
